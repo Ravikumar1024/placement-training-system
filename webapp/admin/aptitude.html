@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Aptitude Tests | Placement Training System</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-page">
+	<main class="container-fluid admin-workspace py-4">
+		<header class="admin-page-heading"><div><p class="admin-eyebrow">ADMINISTRATION / ASSESSMENT</p><h1>Aptitude tests</h1><p class="admin-heading-copy">Create tests and maintain their scored multiple-choice questions.</p></div><a class="btn btn-outline-secondary" href="/webapp/admin/dashboard.html">Back to dashboard</a></header>
+		<output id="aptitudeMessage" class="alert d-none" aria-live="polite"></output>
+		<div class="row g-4">
+			<div class="col-xl-5">
+				<section class="card admin-list-panel h-100">
+					<div class="card-header"><h2 class="h5 mb-0">Test details</h2></div>
+					<div class="card-body">
+						<form id="testForm" class="vstack gap-3">
+							<div><label class="form-label" for="testName">Test name</label><input class="form-control" id="testName" maxlength="100" required></div>
+							<div><label class="form-label" for="testDate">Test date</label><input class="form-control" id="testDate" type="date"></div>
+							<div><label class="form-label" for="totalMarks">Total marks</label><input class="form-control" id="totalMarks" type="number" min="0.01" step="0.01" required></div>
+							<div class="d-flex gap-2"><button class="btn btn-primary" id="saveTest" type="submit">Create test</button><button class="btn btn-outline-secondary" id="cancelTestEdit" type="button" hidden>Cancel edit</button></div>
+						</form>
+						<hr>
+						<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Test</th><th>Date</th><th>Marks</th><th>Actions</th></tr></thead><tbody id="testRows"></tbody></table></div>
+					</div>
+				</section>
+			</div>
+			<div class="col-xl-7">
+				<section class="card admin-list-panel h-100" id="questionWorkspace">
+					<div class="card-header"><h2 class="h5 mb-0" id="questionHeading">Test questions</h2></div>
+					<div class="card-body">
+						<p class="text-muted" id="questionPrompt">Choose a test to add or edit its questions.</p>
+						<form id="questionForm" class="vstack gap-3" hidden>
+							<div><label class="form-label" for="questionPromptInput">Question</label><textarea class="form-control" id="questionPromptInput" rows="2" maxlength="1000" required></textarea></div>
+							<div class="row g-2">
+								<div class="col-md-6"><label class="form-label" for="optionA">Option A</label><input class="form-control" id="optionA" maxlength="500" required></div>
+								<div class="col-md-6"><label class="form-label" for="optionB">Option B</label><input class="form-control" id="optionB" maxlength="500" required></div>
+								<div class="col-md-6"><label class="form-label" for="optionC">Option C</label><input class="form-control" id="optionC" maxlength="500" required></div>
+								<div class="col-md-6"><label class="form-label" for="optionD">Option D</label><input class="form-control" id="optionD" maxlength="500" required></div>
+							</div>
+							<div class="row g-2 align-items-end"><div class="col-md-6"><label class="form-label" for="correctOption">Correct option</label><select class="form-select" id="correctOption"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div><div class="col-md-6"><label class="form-label" for="questionMarks">Question marks</label><input class="form-control" id="questionMarks" type="number" min="0.01" step="0.01" value="1" required></div></div>
+							<div class="d-flex flex-wrap gap-2"><button class="btn btn-primary" id="saveQuestion" type="submit">Add question</button><button class="btn btn-outline-primary" id="importOnlineQuestions" type="button"><i class="fas fa-cloud-arrow-down" aria-hidden="true"></i> Import online questions</button><button class="btn btn-outline-secondary" id="cancelQuestionEdit" type="button" hidden>Cancel edit</button></div>
+							<p class="small text-muted mb-0">Imports up to 10 multiple-choice questions from Open Trivia Database, matched to the test name. Review imported questions before publishing.</p>
+						</form>
+						<hr>
+						<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Question</th><th>Answer</th><th>Marks</th><th>Actions</th></tr></thead><tbody id="questionRows"><tr><td colspan="4" class="text-center text-muted">Choose a test to view questions.</td></tr></tbody></table></div>
+					</div>
+				</section>
+			</div>
+		</div>
+	</main>
+	<script src="/js/csrf.js"></script>
+	<script src="/js/admin-aptitude.js"></script>
+</body>
+</html>

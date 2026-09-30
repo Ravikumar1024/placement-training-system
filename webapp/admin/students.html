@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Students</title><link rel="stylesheet" href="/css/style.css"></head>
+<body><nav><b>Students</b><a href="/webapp/admin/dashboard.html">Dashboard</a></nav><main>
+<h1>Students</h1><form class="card form" id="form"><input id="code" placeholder="student code (no spaces)" required pattern="\S+" maxlength="50" title="Enter a student code without spaces" autocomplete="off"><input id="name" placeholder="name" required><input id="email" placeholder="email" type="email" required><input id="phone" placeholder="phone"><input id="department" placeholder="department"><input id="batch" placeholder="batch"><input id="cgpa" placeholder="cgpa"><input id="backlogs" placeholder="backlogs"><input id="skills" placeholder="skills"><button class="btn">Add</button></form>
+<div class="card"><table><thead><tr><th>student code</th><th>name</th><th>email</th><th>phone</th><th>department</th><th>batch</th><th>cgpa</th><th>backlogs</th><th>skills</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+</main><script>window.API="/api/students"; window.FIELDS=['code', 'name', 'email', 'phone', 'department', 'batch', 'cgpa', 'backlogs', 'skills'];</script><script src="/js/csrf.js"></script><script src="/js/crud.js"></script></body></html>

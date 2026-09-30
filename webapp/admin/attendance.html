@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Attendance | Placement Training System</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-page">
+	<main class="container-fluid admin-workspace py-4">
+		<header class="admin-page-heading">
+			<div>
+				<p class="admin-eyebrow">ADMINISTRATION / TRAINING</p>
+				<h1>Session attendance</h1>
+				<p class="admin-heading-copy">Select a training session and record attendance for its student roster.</p>
+			</div>
+			<a class="btn btn-outline-secondary" href="/webapp/admin/dashboard.html">Back to dashboard</a>
+		</header>
+		<output id="attendanceMessage" class="alert d-none" aria-live="polite"></output>
+		<section class="card admin-list-panel mb-4">
+			<div class="card-body">
+				<div class="row g-3 align-items-end">
+					<div class="col-md-6"><label class="form-label" for="trainingSelect">Training</label><select class="form-select" id="trainingSelect" required><option value="">Choose a training</option></select></div>
+					<div class="col-md-3"><label class="form-label" for="attendanceDate">Session date</label><input class="form-control" id="attendanceDate" type="date" required></div>
+					<div class="col-md-3 d-grid"><button class="btn btn-outline-primary" id="loadRoster" type="button">Load roster</button></div>
+				</div>
+			</div>
+		</section>
+		<section class="card admin-list-panel">
+			<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+				<h2 class="h5 mb-0">Student attendance</h2>
+				<div class="d-flex flex-wrap gap-2">
+					<button class="btn btn-sm btn-outline-secondary" id="markAllPresent" type="button">Mark all present</button>
+					<button class="btn btn-sm btn-outline-secondary" id="markAllAbsent" type="button">Mark all absent</button>
+					<button class="btn btn-sm btn-primary" id="saveAttendance" type="button">Save attendance</button>
+				</div>
+			</div>
+			<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Student</th><th>Email</th><th>Department</th><th class="text-end">Status</th></tr></thead><tbody id="rosterRows"><tr><td colspan="4" class="text-center text-muted py-4">Choose a training and date to load the roster.</td></tr></tbody></table></div>
+		</section>
+		<section class="card admin-list-panel mt-4">
+			<div class="card-header"><h2 class="h5 mb-0">Recorded sessions</h2></div>
+			<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Date</th><th>Training</th><th>Student</th><th>Status</th></tr></thead><tbody id="attendanceHistory"><tr><td colspan="4" class="text-center text-muted py-4">Loading records...</td></tr></tbody></table></div>
+		</section>
+	</main>
+	<script src="/js/csrf.js"></script>
+	<script src="/js/admin-attendance.js"></script>
+</body>
+</html>

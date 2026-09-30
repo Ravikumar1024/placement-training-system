@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Training</title><link rel="stylesheet" href="/css/style.css"></head>
+<body><nav><b>Training</b><a href="/webapp/admin/dashboard.html">Dashboard</a></nav><main>
+<h1>Training</h1><form class="card form" id="form">
+<label for="trainingName">Training name</label><input id="trainingName" placeholder="Training name" required>
+<label for="description">Description</label><input id="description" placeholder="Description">
+<label for="trainer">Trainer</label><input id="trainer" placeholder="Trainer">
+<label for="mode">Delivery mode</label><select id="mode"><option value="ONSITE">On-site</option><option value="ONLINE">Online</option></select>
+<label for="location">Room, building, or campus</label><input id="location" placeholder="Room, building, or campus">
+<label for="meetingUrl">Online meeting URL</label><input id="meetingUrl" type="url" placeholder="https://...">
+<label for="videoUrl">YouTube lesson URL</label><input id="videoUrl" type="url" placeholder="https://www.youtube.com/watch?v=..."><button class="btn btn-outline-secondary" type="button" onclick="searchTrainingVideos()">Find training videos</button>
+<label for="startDate">Start date</label><input id="startDate" type="date" required>
+<label for="endDate">End date</label><input id="endDate" type="date">
+<button class="btn">Add</button></form>
+<div class="card"><table><thead><tr><th>Training</th><th>Mode</th><th>Location / link</th><th>Trainer</th><th>Start date</th><th>End date</th><th>Lesson video</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+</main><script>window.API="/api/trainings"; window.FIELDS=['trainingName', 'description', 'trainer', 'mode', 'location', 'meetingUrl', 'videoUrl', 'startDate', 'endDate']; window.DISPLAY_FIELDS=['trainingName', 'mode', 'location', 'trainer', 'startDate', 'endDate', 'videoUrl'];</script><script src="/js/csrf.js"></script><script src="/js/training-search.js"></script><script src="/js/crud.js"></script></body></html>

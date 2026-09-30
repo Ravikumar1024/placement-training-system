@@ -1,0 +1,25 @@
+placement-training-system/
+├── build.gradle
+├── settings.gradle
+├── database.sql
+├── README.md
+├── webapp/
+│   ├── index.html
+│   ├── login.html
+│   ├── admin/
+│   ├── student/
+│   ├── css/
+│   └── js/
+└── src/main/
+    ├── java/com/placement/
+    │   ├── config/
+    │   ├── controller/
+    │   ├── dto/
+    │   ├── entity/
+    │   ├── exception/
+    │   ├── repository/
+    │   ├── service/
+    │   ├── serviceimpl/
+    │   └── util/
+    └── resources/
+        └── application.yml
