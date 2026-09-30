@@ -465,6 +465,14 @@ small {
     margin-left: 0;
 }
 
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1015;
+    border: 0;
+    background: rgba(18, 35, 31, 0.42);
+}
+
 #toggleSidebar {
     border-radius: 8px;
     transition: all 0.3s;
@@ -565,8 +573,32 @@ small {
     .sidebar.collapsed {
         transform: translateX(-260px);
     }
+
+    .sidebar:not(.collapsed) {
+        transform: translateX(0);
+        visibility: visible;
+        opacity: 1;
+        z-index: 1020;
+    }
     
     .main-content {
+        margin-left: 0;
+    }
+
+    .student-page .sidebar,
+    .student-page .sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .student-page .sidebar:not(.collapsed) {
+        transform: translateX(0);
+        visibility: visible;
+        opacity: 1;
+        z-index: 1020;
+    }
+
+    .student-page .main-content,
+    .student-page .main-content.expanded {
         margin-left: 0;
     }
 }

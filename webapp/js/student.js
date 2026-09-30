@@ -534,7 +534,44 @@ async function load() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', load);
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const mobileSidebar = window.matchMedia('(max-width: 992px)');
+    const backdrop = document.createElement('button');
+    backdrop.type = 'button';
+    backdrop.className = 'sidebar-backdrop';
+    backdrop.setAttribute('aria-label', 'Close navigation menu');
+    backdrop.hidden = true;
+    document.body.appendChild(backdrop);
+
+    const setSidebarOpen = open => {
+        sidebar.classList.toggle('collapsed', !open);
+        mainContent.classList.toggle('expanded', !open);
+        toggleSidebar.setAttribute('aria-expanded', String(open));
+        toggleSidebar.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+        backdrop.hidden = !open || !mobileSidebar.matches;
+    };
+
+    setSidebarOpen(!mobileSidebar.matches);
+    mobileSidebar.addEventListener('change', event => setSidebarOpen(!event.matches));
+    toggleSidebar.addEventListener('click', () => setSidebarOpen(sidebar.classList.contains('collapsed')));
+    backdrop.addEventListener('click', () => setSidebarOpen(false));
+    sidebar.querySelectorAll('[data-page]').forEach(link => {
+        link.addEventListener('click', () => {
+            if (mobileSidebar.matches) setSidebarOpen(false);
+        });
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && mobileSidebar.matches && !sidebar.classList.contains('collapsed')) {
+            setSidebarOpen(false);
+            toggleSidebar.focus();
+        }
+    });
+
+    load();
+});
 
 async function logout() {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (err) { console.error('Error ending student session:', err); }

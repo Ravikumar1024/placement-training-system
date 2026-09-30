@@ -3,6 +3,7 @@ package com.placement.serviceimpl;
 import com.placement.dto.LoginRequest;
 import com.placement.dto.LoginResponse;
 import com.placement.entity.User;
+import com.placement.exception.UnauthorizedException;
 import com.placement.repository.UserRepository;
 import com.placement.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.username())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+            .orElseThrow(() -> new UnauthorizedException("Invalid username or password"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            throw new UnauthorizedException("Invalid username or password");
         }
 
         String studentId = user.getStudent() == null ? null : user.getStudent().getId();

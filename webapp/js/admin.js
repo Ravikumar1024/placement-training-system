@@ -658,15 +658,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('mainContent');
     const mobileSidebar = window.matchMedia('(max-width: 992px)');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const backdrop = document.createElement('button');
+    backdrop.type = 'button';
+    backdrop.className = 'sidebar-backdrop';
+    backdrop.setAttribute('aria-label', 'Close navigation menu');
+    backdrop.hidden = true;
+    document.body.appendChild(backdrop);
 
-    if (mobileSidebar.matches) {
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('expanded');
-    }
+    const setSidebarOpen = open => {
+        sidebar.classList.toggle('collapsed', !open);
+        mainContent.classList.toggle('expanded', !open);
+        toggleSidebar.setAttribute('aria-expanded', String(open));
+        toggleSidebar.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+        backdrop.hidden = !open || !mobileSidebar.matches;
+    };
+
+    setSidebarOpen(!mobileSidebar.matches);
 
     mobileSidebar.addEventListener('change', event => {
-        sidebar.classList.toggle('collapsed', event.matches);
-        mainContent.classList.toggle('expanded', event.matches);
+        setSidebarOpen(!event.matches);
     });
 
     loadAdminDashboard();
@@ -680,8 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage(this.dataset.page);
 
             if (mobileSidebar.matches) {
-                sidebar.classList.add('collapsed');
-                mainContent.classList.add('expanded');
+                setSidebarOpen(false);
             }
             
             // Load data when corresponding page is shown
@@ -695,11 +705,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Toggle sidebar
-    document.getElementById('toggleSidebar').addEventListener('click', function() {
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('expanded');
+    toggleSidebar.addEventListener('click', () => {
+        setSidebarOpen(sidebar.classList.contains('collapsed'));
+    });
+    backdrop.addEventListener('click', () => setSidebarOpen(false));
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && mobileSidebar.matches && !sidebar.classList.contains('collapsed')) {
+            setSidebarOpen(false);
+            toggleSidebar.focus();
+        }
     });
 });
 
