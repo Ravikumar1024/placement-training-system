@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: placement-training-system
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/placement_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
+
+  flyway:
+    baseline-on-migrate: false
+    baseline-version: 1
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  time-zone: Asia/Kolkata
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        same-site: strict
+  error:
+    include-message: always
+ 
