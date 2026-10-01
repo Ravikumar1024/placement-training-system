@@ -1,6 +1,5 @@
 const scoreForm = document.getElementById('scoreForm');
 const scoreRows = document.getElementById('scoreRows');
-const scoreMessage = document.getElementById('scoreMessage');
 const scoreStudent = document.getElementById('scoreStudent');
 const scoreTest = document.getElementById('scoreTest');
 let studentsForScores = [];
@@ -11,14 +10,21 @@ let editingScoreId = null;
 function scoreData(result) { return result.data ?? result; }
 
 function showScoreMessage(message, type = 'info') {
-    scoreMessage.textContent = message;
-    scoreMessage.className = `alert d-block alert-${type}`;
+    if (message && typeof message === 'object') {
+        window.showSnackbar(message);
+        return;
+    }
+    let code = 'PTSE001';
+    if (type === 'success') code = 'PTSS002';
+    else if (type === 'info') code = 'PTSS001';
+    window.showSnackbar({ code, message: String(message || '') });
 }
 
 async function scoreRequest(url, options = {}) {
     const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'The request could not be completed.');
+    if (!response.ok) throw window.createApiError(result, 'The request could not be completed.');
+    if ((options.method || 'GET').toUpperCase() !== 'GET') window.showSnackbar(result);
     return scoreData(result);
 }
 
@@ -35,7 +41,7 @@ async function loadScoreData() {
         fillSelect(scoreStudent, 'Choose a student', studentsForScores, student => student.name);
         fillSelect(scoreTest, 'Choose a test', testsForScores, test => `${test.testName} (${test.testDate || 'unscheduled'})`);
         renderScores();
-    } catch (error) { showScoreMessage(error.message, 'danger'); }
+    } catch (error) { showScoreMessage(error, 'danger'); }
 }
 
 function renderScores() {
@@ -91,8 +97,7 @@ scoreForm.addEventListener('submit', async event => {
         resetScoreForm();
         scoreRecords = await scoreRequest('/api/aptitude-scores');
         renderScores();
-        showScoreMessage('Score saved.', 'success');
-    } catch (error) { showScoreMessage(error.message, 'danger'); }
+    } catch (error) { showScoreMessage(error, 'danger'); }
 });
 
 async function deleteScore(score) {
@@ -101,8 +106,7 @@ async function deleteScore(score) {
         await scoreRequest(`/api/aptitude-scores/${score.id}`, { method: 'DELETE' });
         scoreRecords = await scoreRequest('/api/aptitude-scores');
         renderScores();
-        showScoreMessage('Score deleted.', 'success');
-    } catch (error) { showScoreMessage(error.message, 'danger'); }
+    } catch (error) { showScoreMessage(error, 'danger'); }
 }
 
 document.getElementById('cancelScoreEdit').addEventListener('click', resetScoreForm);

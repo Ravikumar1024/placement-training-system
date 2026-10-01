@@ -17,6 +17,7 @@ import com.placement.repository.AptitudeScoreRepository;
 import com.placement.repository.AptitudeTestRepository;
 import com.placement.repository.StudentRepository;
 import com.placement.repository.UserRepository;
+import com.placement.util.ApiMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -58,16 +59,16 @@ public class AptitudeAssessmentService {
     public AptitudeQuestionAdminView saveQuestion(String testId, String questionId, AptitudeQuestionRequest request) {
         var test = requireTest(testId);
         if (test.getTotalMarks() == null || test.getTotalMarks() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Set total marks greater than zero before adding questions.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.aptitude.totalMarksRequired"));
         }
         AptitudeQuestion question;
         if (questionId == null) {
             question = new AptitudeQuestion();
         } else {
             question = questionRepository.findById(questionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.question.notFound")));
             if (!question.getTest().getId().equals(testId)) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question does not belong to this test.");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.aptitude.questionWrongTest"));
             }
         }
         question.setTest(test);
@@ -86,7 +87,7 @@ public class AptitudeAssessmentService {
     public List<AptitudeQuestionAdminView> importQuestions(String testId, AptitudeQuestionImportRequest request) {
         var test = requireTest(testId);
         if (test.getTotalMarks() == null || test.getTotalMarks() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Set total marks greater than zero before importing questions.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.aptitude.totalMarksImportRequired"));
         }
         List<AptitudeQuestion> questions = request.questions().stream().map(item -> {
             AptitudeQuestion question = new AptitudeQuestion();
@@ -109,9 +110,9 @@ public class AptitudeAssessmentService {
     @Transactional
     public void deleteQuestion(String testId, String questionId) {
         AptitudeQuestion question = questionRepository.findById(questionId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.question.notFound")));
         if (!question.getTest().getId().equals(testId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Question does not belong to this test.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.aptitude.questionWrongTest"));
         }
         questionRepository.delete(question);
     }
@@ -120,28 +121,28 @@ public class AptitudeAssessmentService {
     public AptitudeSubmissionResult submit(String testId, AptitudeSubmissionRequest request, String username) {
         var test = requireTest(testId);
         var user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ApiMessages.get("api.error.authentication.userNotFound")));
         if (user.getRole() != com.placement.entity.User.Role.STUDENT || user.getStudent() == null || !user.getStudent().getId().equals(request.studentId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Students may only submit tests for their own account.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ApiMessages.get("api.error.authentication.studentSubmissionForbidden"));
         }
         var student = studentRepository.findById(request.studentId())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.student.notFound", request.studentId())));
         if (scoreRepository.existsByStudent_IdAndTest_IdAndCompletedAttemptTrue(student.getId(), testId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already completed this test.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ApiMessages.get("api.error.aptitude.alreadyCompleted"));
         }
         List<AptitudeQuestion> questions = questionRepository.findByTest_IdOrderByIdAsc(testId);
         if (questions.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This test does not have any questions yet.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.aptitude.noQuestions"));
         }
         if (test.getTotalMarks() == null || test.getTotalMarks() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This test has no valid total marks.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.aptitude.invalidTotalMarks"));
         }
         Map<String, AptitudeSubmissionRequest.Answer> answers = request.answers().stream()
             .collect(Collectors.toMap(AptitudeSubmissionRequest.Answer::questionId, Function.identity(), (first, duplicate) -> {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A question was answered more than once.");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.aptitude.duplicateAnswer"));
             }));
         if (answers.size() != questions.size() || questions.stream().anyMatch(question -> !answers.containsKey(question.getId()))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Answer every question exactly once before submitting.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.aptitude.answerEveryQuestion"));
         }
         double possibleQuestionMarks = questions.stream().mapToDouble(AptitudeQuestion::getMarks).sum();
         double earnedQuestionMarks = questions.stream()
@@ -183,12 +184,12 @@ public class AptitudeAssessmentService {
     public AptitudeReviewView review(String testId, String username) {
         var test = requireTest(testId);
         var user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ApiMessages.get("api.error.authentication.userNotFound")));
         if (user.getRole() != com.placement.entity.User.Role.STUDENT || user.getStudent() == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A linked student account is required to review a test.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ApiMessages.get("api.error.authentication.studentReviewRequired"));
         }
         AptitudeScore score = scoreRepository.findFirstByStudent_IdAndTest_IdAndCompletedAttemptTrue(user.getStudent().getId(), testId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Complete this test before viewing its answers."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.aptitude.reviewNotCompleted")));
         List<AptitudeAnswerReview> answers = attemptAnswerRepository.findByScore_IdOrderByQuestionOrderAsc(score.getId()).stream()
             .map(answer -> new AptitudeAnswerReview(
                 answer.getPrompt(),
@@ -198,7 +199,7 @@ public class AptitudeAssessmentService {
                 answer.getMarks()))
             .toList();
         if (answers.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "The saved attempt has no answer review data.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ApiMessages.get("api.error.aptitude.emptyAttemptReview"));
         }
         double totalMarks = score.getAttemptTotalMarks() == null ? test.getTotalMarks() : score.getAttemptTotalMarks();
         double earnedMarks = score.getAttemptEarnedMarks() == null ? round(totalMarks * score.getScore() / 100.0) : score.getAttemptEarnedMarks();
@@ -207,7 +208,7 @@ public class AptitudeAssessmentService {
 
     private com.placement.entity.AptitudeTest requireTest(String testId) {
         return testRepository.findById(testId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aptitude test not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.aptitude.testNotFound", testId)));
     }
 
     private double round(double value) {

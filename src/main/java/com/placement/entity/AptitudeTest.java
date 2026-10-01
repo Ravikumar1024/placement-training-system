@@ -16,12 +16,12 @@ public class AptitudeTest {
     private String id;
 
     @Column(nullable = false)
-    @NotBlank(message = "Test name is required")
-    @Size(min = 2, max = 100, message = "Test name must be between 2 and 100 characters")
+    @NotBlank(message = "{aptitudeTest.name.required}")
+    @Size(min = 2, max = 100, message = "{aptitudeTest.name.size}")
     private String testName;
 
     private LocalDate testDate;
     
-    @DecimalMin(value = "0.0", message = "Total marks cannot be negative")
+    @DecimalMin(value = "0.0", message = "{aptitudeTest.totalMarks.min}")
     private Double totalMarks;
 }

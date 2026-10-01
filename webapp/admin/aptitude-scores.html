@@ -13,7 +13,6 @@
 <body class="admin-page">
     <main class="container-fluid admin-workspace py-4">
         <header class="admin-page-heading"><div><p class="admin-eyebrow">ADMINISTRATION / ASSESSMENT</p><h1>Aptitude scores</h1><p class="admin-heading-copy">Record verified percentages and review student results.</p></div><a class="btn btn-outline-secondary" href="/webapp/admin/dashboard.html">Back to dashboard</a></header>
-        <output id="scoreMessage" class="alert d-none" aria-live="polite"></output>
         <section class="card admin-list-panel mb-4">
             <div class="card-header"><h2 class="h5 mb-0" id="scoreFormHeading">Record a score</h2></div>
             <div class="card-body">
@@ -30,6 +29,7 @@
             <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Student</th><th>Test</th><th>Date</th><th>Result</th><th>Actions</th></tr></thead><tbody id="scoreRows"></tbody></table></div>
         </section>
     </main>
+    <script src="/js/snackbar.js"></script>
     <script src="/js/csrf.js"></script>
     <script src="/js/admin-aptitude-scores.js"></script>
 </body>

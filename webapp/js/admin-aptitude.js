@@ -2,7 +2,6 @@ const testsBody = document.getElementById('testRows');
 const questionsBody = document.getElementById('questionRows');
 const testForm = document.getElementById('testForm');
 const questionForm = document.getElementById('questionForm');
-const aptitudeMessage = document.getElementById('aptitudeMessage');
 let tests = [];
 let selectedTest = null;
 let editingTestId = null;
@@ -11,14 +10,21 @@ let editingQuestionId = null;
 function responseData(result) { return result.data ?? result; }
 
 function showAptitudeMessage(message, type = 'info') {
-    aptitudeMessage.textContent = message;
-    aptitudeMessage.className = `alert d-block alert-${type}`;
+    if (message && typeof message === 'object') {
+        window.showSnackbar(message);
+        return;
+    }
+    let code = 'PTSE001';
+    if (type === 'success') code = 'PTSS002';
+    else if (type === 'info') code = 'PTSS001';
+    window.showSnackbar({ code, message: String(message || '') });
 }
 
 async function request(url, options = {}) {
     const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'The request could not be completed.');
+    if (!response.ok) throw window.createApiError(result, 'The request could not be completed.');
+    if ((options.method || 'GET').toUpperCase() !== 'GET') window.showSnackbar(result);
     return responseData(result);
 }
 
@@ -57,7 +63,7 @@ async function loadTests() {
             row.appendChild(actions);
             testsBody.appendChild(row);
         });
-    } catch (error) { showAptitudeMessage(error.message, 'danger'); }
+    } catch (error) { showAptitudeMessage(error, 'danger'); }
 }
 
 function resetTestForm() {
@@ -91,8 +97,7 @@ testForm.addEventListener('submit', async event => {
         resetTestForm();
         await loadTests();
         if (!editingTestId && saved?.id) await selectTest(saved);
-        else showAptitudeMessage('Test saved.', 'success');
-    } catch (error) { showAptitudeMessage(error.message, 'danger'); }
+    } catch (error) { showAptitudeMessage(error, 'danger'); }
 });
 
 async function deleteTest(test) {
@@ -101,8 +106,7 @@ async function deleteTest(test) {
         await request(`/api/aptitude-tests/${test.id}`, { method: 'DELETE' });
         if (selectedTest?.id === test.id) clearSelectedTest();
         await loadTests();
-        showAptitudeMessage('Test deleted.', 'success');
-    } catch (error) { showAptitudeMessage(error.message, 'danger'); }
+    } catch (error) { showAptitudeMessage(error, 'danger'); }
 }
 
 function clearSelectedTest() {
@@ -150,7 +154,7 @@ async function loadQuestions() {
             row.appendChild(actions);
             questionsBody.appendChild(row);
         });
-    } catch (error) { showAptitudeMessage(error.message, 'danger'); }
+    } catch (error) { showAptitudeMessage(error, 'danger'); }
 }
 
 function questionPayload() {
@@ -193,8 +197,7 @@ questionForm.addEventListener('submit', async event => {
         });
         resetQuestionForm();
         await loadQuestions();
-        showAptitudeMessage('Question saved.', 'success');
-    } catch (error) { showAptitudeMessage(error.message, 'danger'); }
+    } catch (error) { showAptitudeMessage(error, 'danger'); }
 });
 
 async function deleteQuestion(question) {
@@ -202,8 +205,7 @@ async function deleteQuestion(question) {
     try {
         await request(`/api/aptitude-tests/${selectedTest.id}/questions/${question.id}`, { method: 'DELETE' });
         await loadQuestions();
-        showAptitudeMessage('Question deleted.', 'success');
-    } catch (error) { showAptitudeMessage(error.message, 'danger'); }
+    } catch (error) { showAptitudeMessage(error, 'danger'); }
 }
 
 function openTriviaCategory(testName) {
@@ -240,7 +242,7 @@ async function importOnlineQuestions() {
     try {
         const category = openTriviaCategory(selectedTest.testName);
         const response = await fetch(`https://opentdb.com/api.php?amount=10&category=${category}&type=multiple&encode=url3986`);
-        if (!response.ok) throw new Error('Open Trivia Database is unavailable right now.');
+        if (!response.ok) throw window.createApiError({ code: 'PTSE006', message: 'Open Trivia Database is unavailable right now.' });
         const result = await response.json();
         if (result.response_code !== 0 || !Array.isArray(result.results) || result.results.length === 0) {
             throw new Error('No questions were returned for this topic. Wait a few seconds and try again.');
@@ -262,13 +264,12 @@ async function importOnlineQuestions() {
         if (questions.length === 0) throw new Error('The returned questions did not fit the test field limits.');
         const questionMarks = Math.max(0.01, Number((Number(selectedTest.totalMarks) / questions.length).toFixed(2)));
         questions.forEach(question => { question.marks = questionMarks; });
-        const imported = await request(`/api/aptitude-tests/${selectedTest.id}/questions/import`, {
+        await request(`/api/aptitude-tests/${selectedTest.id}/questions/import`, {
             method: 'POST', body: JSON.stringify({ questions })
         });
         await loadQuestions();
-        showAptitudeMessage(`Imported ${imported.length} questions from Open Trivia Database. Review the answer keys before publishing.`, 'success');
     } catch (error) {
-        showAptitudeMessage(error.message, 'danger');
+        showAptitudeMessage(error, 'danger');
     } finally {
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-cloud-arrow-down" aria-hidden="true"></i> Import online questions';

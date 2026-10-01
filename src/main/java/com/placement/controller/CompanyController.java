@@ -17,31 +17,31 @@ public class CompanyController {
 
     @GetMapping
     public ResponseEntity<Result<List<Company>>> all() {
-        return ResponseEntity.ok(Result.success("Companies retrieved successfully", service.findAll()));
+        return ResponseEntity.ok(Result.success("api.success.read.companies.list", service.findAll()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Result<Company>> one(@PathVariable("id") String id) {
         Company company = service.findById(id);
-        return ResponseEntity.ok(Result.success("Company retrieved successfully", company));
+        return ResponseEntity.ok(Result.success("api.success.read.companies.one", company));
     }
 
     @PostMapping
     public ResponseEntity<Result<Company>> create(@Valid @RequestBody Company value) {
         Company saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Company created successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.company.created", saved));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Result<Company>> update(@PathVariable("id") String id, @Valid @RequestBody Company value) {
         value.setId(id);
         Company saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Company updated successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.company.updated", saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<Void>> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return ResponseEntity.ok(Result.success("Company deleted successfully",null));
+        return ResponseEntity.ok(Result.success("api.success.write.company.deleted", null));
     }
 }

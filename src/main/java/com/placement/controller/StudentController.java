@@ -17,31 +17,31 @@ public class StudentController {
 
     @GetMapping
     public ResponseEntity<Result<List<Student>>> all() {
-        return ResponseEntity.ok(Result.success("Students retrieved successfully", service.findAll()));
+        return ResponseEntity.ok(Result.success("api.success.read.students.list", service.findAll()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Result<Student>> one(@PathVariable("id") String id) {
         Student student = service.findById(id);
-        return ResponseEntity.ok(Result.success("Student retrieved successfully", student));
+        return ResponseEntity.ok(Result.success("api.success.read.students.one", student));
     }
 
     @PostMapping
     public ResponseEntity<Result<Student>> create(@Valid @RequestBody Student value) {
         Student saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Student created successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.student.created", saved));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Result<Student>> update(@PathVariable("id") String id, @Valid @RequestBody Student value) {
         value.setId(id);
         Student saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Student updated successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.student.updated", saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<Void>> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return ResponseEntity.ok(Result.success("Student deleted successfully",null));
+        return ResponseEntity.ok(Result.success("api.success.write.student.deleted", null));
     }
 }

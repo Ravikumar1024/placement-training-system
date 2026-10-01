@@ -14,6 +14,12 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+async function studentApiResult(response, fallback) {
+    const result = await response.json();
+    if (!response.ok) throw window.createApiError(result, fallback);
+    return result;
+}
+
 function formatStatus(status) {
     if (!status) return 'NOT AVAILABLE';
     return status.replace(/_/g, ' ');
@@ -37,7 +43,8 @@ function loadStudentProfile(student) {
     const studentId = user.studentId;
     if (!student && !studentId) return;
 
-    const request = student ? Promise.resolve({ data: student }) : fetch('/api/students/' + studentId).then(r => r.json());
+    const request = student ? Promise.resolve({ data: student }) : fetch('/api/students/' + encodeURIComponent(studentId))
+        .then(response => studentApiResult(response, 'Unable to load your profile.'));
     request
         .then(result => {
             const student = result.data || result;
@@ -51,7 +58,10 @@ function loadStudentProfile(student) {
                 <strong>Skills:</strong> ${escapeHtml(student.skills || '-') || 'Not specified'}
             `;
         })
-        .catch(err => console.error('Error loading profile:', err));
+        .catch(err => {
+            console.error('Error loading profile:', err);
+            window.showSnackbar(err);
+        });
 }
 
 function loadPlacements(placements) {
@@ -59,7 +69,8 @@ function loadPlacements(placements) {
     const noPlacement = document.getElementById('noPlacement');
     const placementRows = document.getElementById('placementRows');
 
-    const request = placements ? Promise.resolve({ data: placements }) : fetch('/api/placements/student/' + studentId).then(r => r.json());
+    const request = placements ? Promise.resolve({ data: placements }) : fetch('/api/placements/student/' + encodeURIComponent(studentId))
+        .then(response => studentApiResult(response, 'Unable to load placement records.'));
     request
         .then(result => {
             const placementRecords = result.data || result;
@@ -83,6 +94,7 @@ function loadPlacements(placements) {
         .catch(err => {
             console.error('Error loading placements:', err);
             placementRows.innerHTML = `<tr><td colspan="5" class="text-danger text-center">Error loading placements</td></tr>`;
+            window.showSnackbar(err);
         });
 }
 
@@ -90,7 +102,8 @@ function loadAttendance(records) {
     const studentId = user.studentId;
     const table = document.getElementById('attendanceTable');
 
-    const request = records ? Promise.resolve({ data: records }) : fetch('/api/attendances/student/' + encodeURIComponent(studentId)).then(r => r.json());
+    const request = records ? Promise.resolve({ data: records }) : fetch('/api/attendances/student/' + encodeURIComponent(studentId))
+        .then(response => studentApiResult(response, 'Unable to load attendance records.'));
     request
         .then(result => {
             const attendanceRecords = result.data || result;
@@ -110,6 +123,7 @@ function loadAttendance(records) {
         .catch(err => {
             console.error('Error loading attendance:', err);
             table.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Error loading attendance</td></tr>';
+            window.showSnackbar(err);
         });
 }
 
@@ -117,7 +131,8 @@ function loadEligibility(eligibility) {
     const studentId = user.studentId;
     const companiesTable = document.getElementById('companiesTable');
 
-    const request = eligibility ? Promise.resolve({ data: eligibility }) : fetch('/api/eligibility/' + studentId).then(r => r.json());
+    const request = eligibility ? Promise.resolve({ data: eligibility }) : fetch('/api/eligibility/' + encodeURIComponent(studentId))
+        .then(response => studentApiResult(response, 'Unable to load company eligibility.'));
     request
         .then(result => {
             const eligibilityRecords = result.data || result;
@@ -139,6 +154,7 @@ function loadEligibility(eligibility) {
         .catch(err => {
             console.error('Error loading eligibility:', err);
             companiesTable.innerHTML = '<tr><td colspan="3" class="text-danger text-center">Error loading eligibility</td></tr>';
+            window.showSnackbar(err);
         });
 }
 
@@ -158,7 +174,7 @@ async function loadStudentTrainings() {
     try {
         const response = await fetch('/api/trainings/current');
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Unable to load training sessions.');
+        if (!response.ok) throw window.createApiError(result, 'Unable to load training sessions.');
         const trainings = result.data || result;
         rows.replaceChildren();
         if (!trainings.length) {
@@ -195,6 +211,7 @@ async function loadStudentTrainings() {
         });
     } catch (error) {
         rows.innerHTML = `<tr><td colspan="6" class="text-center text-danger">${escapeHtml(error.message)}</td></tr>`;
+        window.showSnackbar(error);
     }
 }
 
@@ -262,7 +279,8 @@ async function startTrainingVideo(training) {
     const videoId = youtubeVideoId(training.videoUrl);
     if (!videoId) {
         message.textContent = 'This training has an invalid YouTube lesson URL.';
-        message.className = 'alert d-block alert-danger mt-3';
+        message.dataset.state = 'error';
+        window.showSnackbar({ code: 'PTSE001', message: message.textContent });
         section.hidden = false;
         return;
     }
@@ -275,7 +293,7 @@ async function startTrainingVideo(training) {
     document.getElementById('trainingVideoProgress').value = 0;
     document.getElementById('trainingVideoTitle').textContent = training.trainingName;
     message.textContent = 'Watch at least 90% of the lesson to record attendance for today.';
-    message.className = 'alert d-block alert-info mt-3';
+    message.dataset.state = 'info';
     section.hidden = false;
     document.getElementById('trainingVideoPlayer').replaceWith(Object.assign(document.createElement('div'), { id: 'trainingVideoPlayer' }));
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -295,13 +313,15 @@ async function startTrainingVideo(training) {
                 },
                 onError: () => {
                     message.textContent = 'This video cannot be played here. Contact the training admin.';
-                    message.className = 'alert d-block alert-danger mt-3';
+                    message.dataset.state = 'error';
+                    window.showSnackbar({ code: 'PTSE006', message: message.textContent });
                 }
             }
         });
     } catch (error) {
         message.textContent = error.message;
-        message.className = 'alert d-block alert-danger mt-3';
+        message.dataset.state = 'error';
+        window.showSnackbar(error);
     }
 }
 
@@ -311,20 +331,22 @@ async function recordTrainingVideoCompletion() {
     trainingAttendanceSent = true;
     const message = document.getElementById('trainingVideoMessage');
     message.textContent = 'Lesson completed. Recording attendance...';
-    message.className = 'alert d-block alert-info mt-3';
+    message.dataset.state = 'info';
     try {
         const response = await fetch(`/api/trainings/${encodeURIComponent(activeTrainingVideo.id)}/video-completion`, { method: 'POST' });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Attendance could not be recorded.');
+        if (!response.ok) throw window.createApiError(result, 'Attendance could not be recorded.');
         const date = result.data?.date || new Date().toISOString().slice(0, 10);
         message.textContent = `Present recorded for ${date}.`;
-        message.className = 'alert d-block alert-success mt-3';
+        message.dataset.state = 'success';
+        window.showSnackbar(result);
         loadAttendance();
         refreshAttendanceStats();
     } catch (error) {
         trainingAttendanceSent = false;
         message.textContent = error.message;
-        message.className = 'alert d-block alert-danger mt-3';
+        message.dataset.state = 'error';
+        window.showSnackbar(error);
     }
 }
 
@@ -341,6 +363,7 @@ async function refreshAttendanceStats() {
         document.getElementById('attendanceRate').textContent = `${rate}%`;
     } catch (error) {
         console.error('Unable to refresh attendance stats:', error);
+        window.showSnackbar(error);
     }
 }
 
@@ -354,7 +377,8 @@ async function loadAptitude() {
                 fetch('/api/aptitude-tests'), fetch('/api/aptitude-scores/student/' + encodeURIComponent(studentId))
         ]);
         const [testResult, scoreResult] = await Promise.all([testResponse.json(), scoreResponse.json()]);
-        if (!testResponse.ok || !scoreResponse.ok) throw new Error(testResult.message || scoreResult.message || 'Unable to load aptitude data.');
+        if (!testResponse.ok) throw window.createApiError(testResult, 'Unable to load aptitude data.');
+        if (!scoreResponse.ok) throw window.createApiError(scoreResult, 'Unable to load aptitude data.');
         const tests = testResult.data || testResult;
         const scores = scoreResult.data || scoreResult;
         const completedAttempts = new Map(scores
@@ -391,20 +415,16 @@ async function loadAptitude() {
                 scoreRows.appendChild(row);
             });
         }
-        document.getElementById('aptitudeMessage').classList.add('d-none');
     } catch (error) {
-        const message = document.getElementById('aptitudeMessage');
-        message.textContent = error.message;
-        message.className = 'alert d-block alert-danger';
+        window.showSnackbar(error);
     }
 }
 
 async function beginAptitudeTest(test) {
-    const message = document.getElementById('aptitudeMessage');
     try {
         const response = await fetch(`/api/aptitude-tests/${encodeURIComponent(test.id)}/questions`);
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not open this test.');
+        if (!response.ok) throw window.createApiError(result, 'Could not open this test.');
         const questions = result.data || result;
         if (questions.length === 0) throw new Error('This test does not have questions yet.');
         activeAptitudeTest = { test, questions };
@@ -436,11 +456,9 @@ async function beginAptitudeTest(test) {
         submit.type = 'submit'; submit.className = 'btn btn-primary align-self-start'; submit.textContent = 'Submit test';
         form.appendChild(submit);
         document.getElementById('assessmentContainer').hidden = false;
-        message.classList.add('d-none');
         document.getElementById('assessmentContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'alert d-block alert-danger';
+        window.showSnackbar(error);
     }
 }
 
@@ -456,25 +474,23 @@ document.getElementById('assessmentForm')?.addEventListener('submit', async even
             body: JSON.stringify({ studentId: userStudentId, answers })
         });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not submit the test.');
+        if (!response.ok) throw window.createApiError(result, 'Could not submit the test.');
+        window.showSnackbar(result);
         const submittedTest = activeAptitudeTest.test;
         document.getElementById('assessmentContainer').hidden = true;
         activeAptitudeTest = null;
         await loadAptitude();
         await viewAptitudeReview(submittedTest);
     } catch (error) {
-        const message = document.getElementById('aptitudeMessage');
-        message.textContent = error.message;
-        message.className = 'alert d-block alert-danger';
+        window.showSnackbar(error);
     }
 });
 
 async function viewAptitudeReview(test) {
-    const message = document.getElementById('aptitudeMessage');
     try {
         const response = await fetch(`/api/aptitude-tests/${encodeURIComponent(test.id)}/review`);
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not load the completed test review.');
+        if (!response.ok) throw window.createApiError(result, 'Could not load the completed test review.');
         const review = result.data || result;
         document.getElementById('assessmentContainer').hidden = true;
         document.getElementById('reviewTitle').textContent = `${review.testName} · Answer review`;
@@ -505,11 +521,9 @@ async function viewAptitudeReview(test) {
             reviewAnswers.appendChild(article);
         });
         document.getElementById('assessmentReview').hidden = false;
-        message.classList.add('d-none');
         document.getElementById('assessmentReview').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
-        message.textContent = error.message;
-        message.className = 'alert d-block alert-danger';
+        window.showSnackbar(error);
     }
 }
 
@@ -521,7 +535,7 @@ async function load() {
     try {
         const response = await fetch('/api/dashboard');
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Unable to load dashboard.');
+        if (!response.ok) throw window.createApiError(result, 'Unable to load dashboard.');
         const dashboard = result.data || result;
         if (dashboard.role !== 'STUDENT') throw new Error('Student dashboard data is unavailable.');
         loadStudentProfile(dashboard.student);
@@ -531,6 +545,7 @@ async function load() {
     } catch (error) {
         console.error('Error loading student dashboard:', error);
         document.getElementById('studentInfo').textContent = error.message;
+        window.showSnackbar(error);
     }
 }
 

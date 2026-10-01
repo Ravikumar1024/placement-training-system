@@ -11,27 +11,29 @@
   <input id="appliedDate" type="date" required>
   <input id="placementDate" type="date">
   <button class="btn" type="submit">Add Placement</button>
-  <span id="msg"></span>
 </form>
 <div class="card"><table><thead><tr><th>ID</th><th>Student</th><th>Company</th><th>Status</th><th>Applied Date</th><th>Placement Date</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
 </main>
+<script src="/js/snackbar.js"></script>
 <script>
 const rows = document.getElementById('rows');
 const form = document.getElementById('placementForm');
-const msg = document.getElementById('msg');
 const esc = v => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
 async function load(){
   const r=await fetch('/api/placements');
   const data=await r.json();
-  rows.innerHTML=data.map(p=>`<tr><td>${p.id}</td><td>${p.student?.id ?? ''}</td><td>${esc(p.company?.companyName)}</td><td>${esc(p.status)}</td><td>${p.appliedDate ?? ''}</td><td>${p.placementDate ?? ''}</td><td><button onclick="del(${p.id})">Delete</button></td></tr>`).join('');
+  if(!r.ok){window.showSnackbar(data);return;}
+  const placements=data.data ?? data;
+  rows.innerHTML=placements.map(p=>`<tr><td>${esc(p.id)}</td><td>${esc(p.student?.id ?? '')}</td><td>${esc(p.company?.companyName)}</td><td>${esc(p.status)}</td><td>${esc(p.appliedDate ?? '')}</td><td>${esc(p.placementDate ?? '')}</td><td><button type="button" onclick="del('${esc(p.id)}')">Delete</button></td></tr>`).join('');
 }
 form.addEventListener('submit',async e=>{
-  e.preventDefault(); msg.textContent='';
+  e.preventDefault();
   const body={studentId:Number(studentId.value),companyId:Number(companyId.value),status:status.value,appliedDate:appliedDate.value,placementDate:placementDate.value||null};
   const r=await fetch('/api/placements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok){msg.textContent='Could not save placement'; return;}
-  form.reset(); msg.textContent='Placement saved'; load();
+  const result=await r.json();
+  if(!r.ok){window.showSnackbar(result);return;}
+  form.reset(); window.showSnackbar(result); load();
 });
-async function del(id){if(confirm('Delete this placement?')){await fetch('/api/placements/'+id,{method:'DELETE'});load();}}
+async function del(id){if(confirm('Delete this placement?')){const r=await fetch('/api/placements/'+encodeURIComponent(id),{method:'DELETE'});const result=await r.json();if(!r.ok){window.showSnackbar(result);return;}window.showSnackbar(result);load();}}
 load();
 </script></body></html>

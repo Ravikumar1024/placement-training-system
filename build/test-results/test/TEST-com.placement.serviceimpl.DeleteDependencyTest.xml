@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.placement.serviceimpl.DeleteDependencyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-01T06:04:48.258Z" hostname="LAP156" time="0.157">
+  <properties/>
+  <testcase name="trainingDeleteExplainsAttendanceDependency()" classname="com.placement.serviceimpl.DeleteDependencyTest" time="0.124"/>
+  <testcase name="studentDeleteExplainsAttendanceDependency()" classname="com.placement.serviceimpl.DeleteDependencyTest" time="0.007"/>
+  <testcase name="aptitudeTestDeleteExplainsScoreDependency()" classname="com.placement.serviceimpl.DeleteDependencyTest" time="0.01"/>
+  <testcase name="companyDeleteExplainsPlacementDependency()" classname="com.placement.serviceimpl.DeleteDependencyTest" time="0.014"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

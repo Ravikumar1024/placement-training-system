@@ -16,6 +16,7 @@ import com.placement.repository.PlacementRepository;
 import com.placement.repository.StudentRepository;
 import com.placement.service.PlacementService;
 import com.placement.util.EligibilityUtil;
+import com.placement.util.ApiMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +43,7 @@ public class PlacementServiceImpl implements PlacementService {
     @Transactional(readOnly = true)
     public Placement findById(String id) {
         return repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Placement not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.placement.notFound", id));
     }
 
     @Transactional
@@ -54,14 +55,14 @@ public class PlacementServiceImpl implements PlacementService {
     @Transactional
     public Placement save(PlacementRequest request) {
         Student student = studentRepository.findById(request.studentId())
-            .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + request.studentId()));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.student.notFound", request.studentId()));
         Company company = companyRepository.findById(request.companyId())
-            .orElseThrow(() -> new ResourceNotFoundException("Company not found: " + request.companyId()));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.company.notFound", request.companyId()));
 
         // Check if placement already exists for this student and company
         if (repository.findByStudent_IdAndCompany_Id(request.studentId(), request.companyId()).stream()
                 .anyMatch(p -> p.getStatus() != Placement.Status.REJECTED)) {
-            throw new IllegalArgumentException("Placement already exists for this student and company");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.placement.alreadyExists"));
         }
 
         Placement placement = Placement.builder()
@@ -79,9 +80,9 @@ public class PlacementServiceImpl implements PlacementService {
     public Placement update(String id, PlacementRequest request) {
         Placement placement = findById(id);
         Student student = studentRepository.findById(request.studentId())
-            .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + request.studentId()));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.student.notFound", request.studentId()));
         Company company = companyRepository.findById(request.companyId())
-            .orElseThrow(() -> new ResourceNotFoundException("Company not found: " + request.companyId()));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.company.notFound", request.companyId()));
         
         placement.setStudent(student);
         placement.setCompany(company);
@@ -153,7 +154,7 @@ public class PlacementServiceImpl implements PlacementService {
 
     @Transactional
     public void delete(String id) {
-        if (!repository.existsById(id)) throw new ResourceNotFoundException("Placement not found: " + id);
+        if (!repository.existsById(id)) throw new ResourceNotFoundException("api.error.placement.notFound", id);
         repository.deleteById(id);
     }
 

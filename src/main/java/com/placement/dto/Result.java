@@ -1,102 +1,60 @@
 package com.placement.dto;
 
-import lombok.*;
+import lombok.Getter;
+import com.placement.util.ApiMessages;
 
-import java.util.Map;
-
-/**
- * Generic Result class for API responses.
- * Contains code, message, and data fields for standardized responses.
- */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Result<T> {
-    private int code;
-    private String message;
-    private T data;
-    private Map<String, String> errors;
+    private final String code;
+    private final String message;
+    private final T data;
 
-    public static <T> Result<T> success(String message, T data) {
-        return Result.<T>builder()
-            .code(200)
-            .message(message)
-            .data(data)
-            .build();
+    private Result(String code, String message, T data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+    }
+
+    public static <T> Result<T> success(String messageKey, T data) {
+        String code = ApiMessages.get(messageKey + ".code");
+        String message = ApiMessages.get(messageKey + ".message");
+        return new Result<>(code, message, data);
     }
 
     public static <T> Result<T> success(T data) {
-        return Result.<T>builder()
-            .code(200)
-            .message("Success")
-            .data(data)
-            .build();
+        return success("api.success.read.generic", data);
     }
 
     public static <T> Result<T> success() {
-        return Result.<T>builder()
-            .code(200)
-            .message("Success")
-            .data(null)
-            .build();
+        return success(null);
     }
 
-    public static <T> Result<T> error(int code, String message) {
-        return Result.<T>builder()
-            .code(code)
-            .message(message)
-            .data(null)
-            .build();
+    public static <T> Result<T> error(int httpStatus, String detail) {
+        String code = ApiMessages.get("api.error.status." + httpStatus + ".code");
+        String message = detail == null || detail.isBlank()
+            ? ApiMessages.get("api.error." + code + ".message")
+            : detail;
+        return new Result<>(code, message, null);
     }
 
-    public static <T> Result<T> notFound(String message) {
-        return Result.<T>builder()
-            .code(404)
-            .message(message)
-            .data(null)
-            .build();
+    public static <T> Result<T> notFound(String detail) {
+        return error(404, detail);
     }
 
-    public static <T> Result<T> badRequest(String message) {
-        return Result.<T>builder()
-            .code(400)
-            .message(message)
-            .data(null)
-            .build();
+    public static <T> Result<T> badRequest(String detail) {
+        return error(400, detail);
     }
 
-    public static <T> Result<T> badRequest(String message, Map<String, String> errors) {
-        return Result.<T>builder()
-            .code(400)
-            .message(message)
-            .data(null)
-            .errors(errors)
-            .build();
+    public static <T> Result<T> unauthorized(String detail) {
+        return error(401, detail);
     }
 
-    public static <T> Result<T> unauthorized(String message) {
-        return Result.<T>builder()
-            .code(401)
-            .message(message)
-            .data(null)
-            .build();
+    public static <T> Result<T> forbidden(String detail) {
+        return error(403, detail);
     }
 
-    public static <T> Result<T> forbidden(String message) {
-        return Result.<T>builder()
-            .code(403)
-            .message(message)
-            .data(null)
-            .build();
+    public static <T> Result<T> internalError(String detail) {
+        return error(500, detail);
     }
 
-    public static <T> Result<T> internalError(String message) {
-        return Result.<T>builder()
-            .code(500)
-            .message(message)
-            .data(null)
-            .build();
-    }
 }

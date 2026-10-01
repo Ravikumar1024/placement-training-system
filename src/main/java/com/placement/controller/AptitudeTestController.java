@@ -16,6 +16,7 @@ import com.placement.repository.AptitudeScoreRepository;
 import com.placement.repository.AptitudeTestRepository;
 import org.springframework.security.core.Authentication;
 import com.placement.serviceimpl.AptitudeAssessmentService;
+import com.placement.util.ApiMessages;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -38,21 +39,21 @@ public class AptitudeTestController {
         List<AptitudeTestView> tests = repository.findAll().stream()
             .map(test -> new AptitudeTestView(test.getId(), test.getTestName(), test.getTestDate(), test.getTotalMarks(), questionRepository.countByTest_Id(test.getId())))
             .toList();
-        return ResponseEntity.ok(Result.success("Aptitude tests retrieved successfully", tests));
+        return ResponseEntity.ok(Result.success("api.success.read.aptitudeTests.list", tests));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Result<AptitudeTest>> one(@PathVariable("id") String id) {
         AptitudeTest test = repository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Aptitude test not found: " + id));
-        return ResponseEntity.ok(Result.success("Aptitude test retrieved successfully", test));
+            .orElseThrow(() -> new IllegalArgumentException(ApiMessages.get("api.error.aptitude.testNotFound", id)));
+        return ResponseEntity.ok(Result.success("api.success.read.aptitudeTests.one", test));
     }
 
     @PostMapping
     public ResponseEntity<Result<AptitudeTest>> create(@Valid @RequestBody AptitudeTestRequest request) {
         AptitudeTest value = toEntity(request);
         AptitudeTest saved = repository.save(value);
-        return ResponseEntity.ok(Result.success("Aptitude test created successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeTest.created", saved));
     }
 
     @PutMapping("/{id}")
@@ -60,60 +61,67 @@ public class AptitudeTestController {
         AptitudeTest value = toEntity(request);
         value.setId(id);
         AptitudeTest saved = repository.save(value);
-        return ResponseEntity.ok(Result.success("Aptitude test updated successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeTest.updated", saved));
     }
 
     @GetMapping("/{id}/questions")
     public ResponseEntity<Result<List<AptitudeQuestionView>>> questions(@PathVariable("id") String id) {
-        return ResponseEntity.ok(Result.success("Aptitude questions retrieved successfully", assessmentService.studentQuestions(id)));
+        return ResponseEntity.ok(Result.success("api.success.read.aptitudeQuestions.student", assessmentService.studentQuestions(id)));
     }
 
     @GetMapping("/{id}/questions/manage")
-    public ResponseEntity<Result<List<AptitudeQuestionAdminView>>> manageQuestions(@PathVariable String id) {
-        return ResponseEntity.ok(Result.success("Aptitude questions retrieved successfully", assessmentService.adminQuestions(id)));
+    public ResponseEntity<Result<List<AptitudeQuestionAdminView>>> manageQuestions(@PathVariable("id") String id) {
+        return ResponseEntity.ok(Result.success("api.success.read.aptitudeQuestions.admin", assessmentService.adminQuestions(id)));
     }
 
     @PostMapping("/{id}/questions")
     public ResponseEntity<Result<AptitudeQuestionAdminView>> addQuestion(@PathVariable("id") String id, @Valid @RequestBody AptitudeQuestionRequest request) {
-        return ResponseEntity.ok(Result.success("Aptitude question created successfully", assessmentService.saveQuestion(id, null, request)));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeQuestion.created", assessmentService.saveQuestion(id, null, request)));
     }
 
     @PostMapping("/{id}/questions/import")
     public ResponseEntity<Result<List<AptitudeQuestionAdminView>>> importQuestions(@PathVariable("id") String id, @Valid @RequestBody AptitudeQuestionImportRequest request) {
-        return ResponseEntity.ok(Result.success("Online aptitude questions imported successfully", assessmentService.importQuestions(id, request)));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeQuestions.imported", assessmentService.importQuestions(id, request)));
     }
 
     @PutMapping("/{id}/questions/{questionId}")
-    public ResponseEntity<Result<AptitudeQuestionAdminView>> updateQuestion(@PathVariable("id") String id, @PathVariable String questionId, @Valid @RequestBody AptitudeQuestionRequest request) {
-        return ResponseEntity.ok(Result.success("Aptitude question updated successfully", assessmentService.saveQuestion(id, questionId, request)));
+    public ResponseEntity<Result<AptitudeQuestionAdminView>> updateQuestion(@PathVariable("id") String id, @PathVariable("questionId") String questionId, @Valid @RequestBody AptitudeQuestionRequest request) {
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeQuestion.updated", assessmentService.saveQuestion(id, questionId, request)));
     }
 
     @DeleteMapping("/{id}/questions/{questionId}")
     public ResponseEntity<Result<Void>> deleteQuestion(@PathVariable("id") String id, @PathVariable("questionId") String questionId) {
         assessmentService.deleteQuestion(id, questionId);
-        return ResponseEntity.ok(Result.success("Aptitude question deleted successfully", null));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeQuestion.deleted", null));
     }
 
     @PostMapping("/{id}/submit")
     public ResponseEntity<Result<AptitudeSubmissionResult>> submit(@PathVariable("id") String id, @Valid @RequestBody AptitudeSubmissionRequest request, Authentication authentication) {
-        return ResponseEntity.ok(Result.success("Aptitude test submitted successfully", assessmentService.submit(id, request, authentication.getName())));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeTest.submitted", assessmentService.submit(id, request, authentication.getName())));
     }
 
     @GetMapping("/{id}/review")
     public ResponseEntity<Result<AptitudeReviewView>> review(@PathVariable("id") String id, Authentication authentication) {
-        return ResponseEntity.ok(Result.success("Aptitude test review retrieved successfully", assessmentService.review(id, authentication.getName())));
+        return ResponseEntity.ok(Result.success("api.success.read.aptitudeTest.review", assessmentService.review(id, authentication.getName())));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<Void>> delete(@PathVariable("id") String id) {
-        if (scoreRepository.countByTest_Id(id) > 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A test with recorded scores cannot be deleted.");
+        if (!repository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ApiMessages.get("api.error.aptitude.testNotFound", id));
         }
-        if (questionRepository.countByTest_Id(id) > 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Delete the test questions before deleting this test.");
+        long scoreCount = scoreRepository.countByTest_Id(id);
+        if (scoreCount > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                ApiMessages.get("api.error.aptitudeTest.scoreReferences", scoreCount));
+        }
+        long questionCount = questionRepository.countByTest_Id(id);
+        if (questionCount > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                ApiMessages.get("api.error.aptitudeTest.questionReferences", questionCount));
         }
         repository.deleteById(id);
-        return ResponseEntity.ok(Result.success("Aptitude test deleted successfully",null));
+        return ResponseEntity.ok(Result.success("api.success.write.aptitudeTest.deleted", null));
     }
 
     private AptitudeTest toEntity(AptitudeTestRequest request) {

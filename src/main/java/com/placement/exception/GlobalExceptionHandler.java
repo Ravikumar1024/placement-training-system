@@ -3,14 +3,13 @@ package com.placement.exception;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import com.placement.dto.Result;
+import com.placement.util.ApiMessages;
 import jakarta.validation.ConstraintViolationException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,18 +21,22 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Result<Void>> handleValidationExceptions(MethodArgumentNotValidException e) {
-        Map<String, String> errors = new HashMap<>();
-        for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
-            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-        }
+        String details = e.getBindingResult().getFieldErrors().stream()
+            .map(fieldError -> ApiMessages.get("api.error.validationField", fieldError.getField(), fieldError.getDefaultMessage()))
+            .distinct()
+            .collect(Collectors.joining(ApiMessages.get("api.error.validationSeparator")));
         return ResponseEntity.badRequest()
-            .body(Result.badRequest("Validation failed", errors));
+            .body(Result.badRequest(ApiMessages.get("api.error.validationPrefix") + " " + details));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Result<Void>> handleConstraintViolationExceptions(ConstraintViolationException e) {
+        String details = e.getConstraintViolations().stream()
+            .map(violation -> ApiMessages.get("api.error.validationField", violation.getPropertyPath(), violation.getMessage()))
+            .distinct()
+            .collect(Collectors.joining(ApiMessages.get("api.error.validationSeparator")));
         return ResponseEntity.badRequest()
-            .body(Result.badRequest("Validation failed: " + e.getMessage()));
+            .body(Result.badRequest(ApiMessages.get("api.error.validationPrefix") + " " + details));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -51,7 +54,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Result<Void>> handleResponseStatusException(ResponseStatusException e) {
         HttpStatusCode status = e.getStatusCode();
-        String message = e.getReason() == null ? status.toString() : e.getReason();
+        String message = e.getReason();
         return ResponseEntity.status(status)
             .body(Result.error(status.value(), message));
     }
@@ -59,12 +62,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Result<Void>> handleDataIntegrityViolation(DataIntegrityViolationException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(Result.error(HttpStatus.CONFLICT.value(), "This record conflicts with existing data."));
+            .body(Result.error(HttpStatus.CONFLICT.value(), ApiMessages.get("api.error.dataConflict")));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Void>> internalError(Exception e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(Result.internalError("An unexpected error occurred: " + e.getMessage()));
+            .body(Result.internalError(null));
     }
 }

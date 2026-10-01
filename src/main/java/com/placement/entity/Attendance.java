@@ -16,19 +16,19 @@ public class Attendance {
     private String id;
 
     @ManyToOne(optional = false)
-    @NotNull(message = "Student is required")
+    @NotNull(message = "{attendance.student.required}")
     private Student student;
 
     @ManyToOne(optional = false)
-    @NotNull(message = "Training is required")
+    @NotNull(message = "{attendance.training.required}")
     private Training training;
 
     @Column(nullable = false)
-    @NotNull(message = "Attendance date is required")
+    @NotNull(message = "{attendance.date.required}")
     private LocalDate date;
 
     @Column(nullable = false)
-    @NotNull(message = "Presence status is required")
+    @NotNull(message = "{attendance.present.required}")
     private boolean present;
     
     public boolean isPresent() {

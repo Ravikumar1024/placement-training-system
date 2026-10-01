@@ -4,6 +4,7 @@ import com.placement.dto.EligibilityResponse;
 import com.placement.dto.Result;
 import com.placement.entity.*;
 import com.placement.repository.*;
+import com.placement.util.ApiMessages;
 import com.placement.util.EligibilityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class EligibilityController {
     @GetMapping("/{studentId}")
     public ResponseEntity<Result<List<EligibilityResponse>>> eligible(@PathVariable("studentId") String studentId) {
         Student s = studentRepository.findById(studentId)
-            .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
+            .orElseThrow(() -> new IllegalArgumentException(ApiMessages.get("api.error.student.notFound", studentId)));
         
         double aptitude = aptitudeScoreRepository.findAll().stream()
             .filter(x -> x.getStudent().getId().equals(studentId))
@@ -38,6 +39,6 @@ public class EligibilityController {
             return new EligibilityResponse(c.getId(), c.getCompanyName(), reasons.isEmpty(), reasons);
         }).toList();
         
-        return ResponseEntity.ok(Result.success("Eligibility check completed successfully", responses));
+        return ResponseEntity.ok(Result.success("api.success.read.eligibility", responses));
     }
 }

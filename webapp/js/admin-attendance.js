@@ -2,7 +2,6 @@ const trainingSelect = document.getElementById('trainingSelect');
 const attendanceDate = document.getElementById('attendanceDate');
 const rosterRows = document.getElementById('rosterRows');
 const historyRows = document.getElementById('attendanceHistory');
-const messageBox = document.getElementById('attendanceMessage');
 let students = [];
 let trainings = [];
 let attendanceRecords = [];
@@ -12,14 +11,16 @@ function apiData(result) {
 }
 
 function setAttendanceMessage(message, type = 'info') {
-    messageBox.textContent = message;
-    messageBox.className = `alert d-block alert-${type}`;
+    window.showSnackbar(message && typeof message === 'object' ? message : {
+        code: type === 'success' || type === 'info' ? 'PTSS001' : 'PTSE001',
+        message: String(message || '')
+    });
 }
 
 async function fetchList(url) {
     const response = await fetch(url);
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Unable to load data.');
+    if (!response.ok) throw window.createApiError(result, 'Unable to load data.');
     return apiData(result);
 }
 
@@ -75,7 +76,7 @@ async function loadRoster() {
         renderRoster();
         setAttendanceMessage('Roster loaded. Existing marks for this session have been selected.', 'success');
     } catch (error) {
-        setAttendanceMessage(error.message, 'warning');
+        setAttendanceMessage(error, 'warning');
     }
 }
 
@@ -113,7 +114,7 @@ async function loadInitialData() {
         trainings.forEach(training => trainingSelect.append(option(training.trainingName, training.id)));
         renderHistory();
     } catch (error) {
-        setAttendanceMessage(error.message, 'danger');
+        setAttendanceMessage(error, 'danger');
     }
 }
 
@@ -134,13 +135,13 @@ async function saveAttendance() {
             })
         });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Could not save attendance.');
+        if (!response.ok) throw window.createApiError(result, 'Could not save attendance.');
         attendanceRecords = await fetchList('/api/attendances');
         renderRoster();
         renderHistory();
-        setAttendanceMessage('Attendance saved for the full roster.', 'success');
+        setAttendanceMessage(result, 'success');
     } catch (error) {
-        setAttendanceMessage(error.message, 'danger');
+        setAttendanceMessage(error, 'danger');
     }
 }
 

@@ -10,14 +10,14 @@ public final class EligibilityUtil {
 
     public static List<String> reasons(Student s, Company c, double aptitude, double attendance) {
         List<String> reasons = new ArrayList<>();
-        if (s.getCgpa() == null || s.getCgpa() < safe(c.getMinCgpa())) reasons.add("CGPA below requirement");
-        if (s.getBacklogs() == null || s.getBacklogs() > safeInt(c.getMaxBacklogs())) reasons.add("Backlogs exceed limit");
-        if (aptitude < safe(c.getMinAptitudeScore())) reasons.add("Aptitude score below requirement");
-        if (attendance < safe(c.getMinAttendance())) reasons.add("Attendance below requirement");
+        if (s.getCgpa() == null || s.getCgpa() < safe(c.getMinCgpa())) reasons.add(ApiMessages.get("eligibility.reason.cgpa"));
+        if (s.getBacklogs() == null || s.getBacklogs() > safeInt(c.getMaxBacklogs())) reasons.add(ApiMessages.get("eligibility.reason.backlogs"));
+        if (aptitude < safe(c.getMinAptitudeScore())) reasons.add(ApiMessages.get("eligibility.reason.aptitude"));
+        if (attendance < safe(c.getMinAttendance())) reasons.add(ApiMessages.get("eligibility.reason.attendance"));
         if (c.getEligibleDepartments() != null && !c.getEligibleDepartments().isBlank()) {
             boolean deptOk = java.util.Arrays.stream(c.getEligibleDepartments().split(","))
                     .map(String::trim).anyMatch(d -> d.equalsIgnoreCase(s.getDepartment()));
-            if (!deptOk) reasons.add("Department not eligible");
+            if (!deptOk) reasons.add(ApiMessages.get("eligibility.reason.department"));
         }
         return reasons;
     }

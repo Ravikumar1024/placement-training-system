@@ -20,33 +20,33 @@ public class Company {
     private String id;
 
     @Column(nullable = false)
-    @NotBlank(message = "Company name is required")
-    @Size(min = 2, max = 100, message = "Company name must be between 2 and 100 characters")
+    @NotBlank(message = "{company.name.required}")
+    @Size(min = 2, max = 100, message = "{company.name.size}")
     private String companyName;
 
-    @Size(max = 100, message = "Job role must be at most 100 characters")
+    @Size(max = 100, message = "{company.jobRole.maxSize}")
     private String jobRole;
     
-    @DecimalMin(value = "0.0", message = "Package cannot be negative")
+    @DecimalMin(value = "0.0", message = "{company.package.min}")
     private Double packageLpa;
     
-    @DecimalMin(value = "0.0", message = "Minimum CGPA cannot be negative")
+    @DecimalMin(value = "0.0", message = "{company.minCgpa.min}")
     private Double minCgpa;
     
-    @Min(value = 0, message = "Maximum backlogs cannot be negative")
+    @Min(value = 0, message = "{company.maxBacklogs.min}")
     private Integer maxBacklogs;
     
-    @DecimalMin(value = "0.0", message = "Minimum aptitude score cannot be negative")
-    @DecimalMax(value = "100.0", message = "Minimum aptitude score cannot exceed 100")
+    @DecimalMin(value = "0.0", message = "{company.minAptitudeScore.min}")
+    @DecimalMax(value = "100.0", message = "{company.minAptitudeScore.max}")
     private Double minAptitudeScore;
     
-    @DecimalMin(value = "0.0", message = "Minimum attendance cannot be negative")
-    @DecimalMax(value = "100.0", message = "Minimum attendance cannot exceed 100")
+    @DecimalMin(value = "0.0", message = "{company.minAttendance.min}")
+    @DecimalMax(value = "100.0", message = "{company.minAttendance.max}")
     private Double minAttendance;
     
-    @Size(max = 200, message = "Eligible departments must be at most 200 characters")
+    @Size(max = 200, message = "{company.departments.maxSize}")
     private String eligibleDepartments;
     
-    @Size(max = 500, message = "Required skills must be at most 500 characters")
+    @Size(max = 500, message = "{company.skills.maxSize}")
     private String requiredSkills;
 }

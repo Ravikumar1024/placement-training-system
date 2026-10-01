@@ -24,15 +24,15 @@ public class AptitudeScore {
     private String id;
 
     @ManyToOne(optional = false)
-    @NotNull(message = "Student is required")
+    @NotNull(message = "{aptitudeScore.student.required}")
     private Student student;
 
     @ManyToOne(optional = false)
-    @NotNull(message = "Aptitude test is required")
+    @NotNull(message = "{aptitudeScore.test.required}")
     private AptitudeTest test;
 
-    @DecimalMin(value = "0.0", message = "Score cannot be negative")
-    @DecimalMax(value = "100.0", message = "Score cannot exceed 100")
+    @DecimalMin(value = "0.0", message = "{aptitudeScore.score.min}")
+    @DecimalMax(value = "100.0", message = "{aptitudeScore.score.max}")
     private Double score;
 
     @Column(name = "completed_attempt", nullable = false)

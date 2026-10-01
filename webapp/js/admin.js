@@ -9,51 +9,25 @@ async function apiCall(url, options = {}) {
 
 // Show message helper
 function showMessage(elementId, message, type) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    el.textContent = message;
-    el.className = `alert alert-${type} mt-3`;
-    el.classList.remove('d-none');
-    setTimeout(() => el.classList.add('d-none'), 3000);
+    window.showSnackbar(message, null, type === 'success' ? 'success' : 'error');
 }
 
 function showToast(message, type = 'success') {
-    const region = document.getElementById('toastRegion');
-    if (!region) return;
-
-    const variant = type === 'error' ? 'error' : 'success';
-    const toast = document.createElement('div');
-    toast.className = `admin-toast admin-toast-${variant}`;
-    toast.setAttribute('role', variant === 'error' ? 'alert' : 'status');
-
-    const icon = document.createElement('i');
-    icon.className = `fas ${variant === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}`;
-    icon.setAttribute('aria-hidden', 'true');
-
-    const text = document.createElement('span');
-    text.className = 'admin-toast-message';
-    text.textContent = message;
-
-    const dismiss = document.createElement('button');
-    dismiss.type = 'button';
-    dismiss.className = 'admin-toast-dismiss';
-    dismiss.setAttribute('aria-label', 'Dismiss notification');
-    dismiss.innerHTML = '<i class="fas fa-xmark" aria-hidden="true"></i>';
-
-    let removeTimer;
-    const dismissToast = () => {
-        if (toast.dataset.dismissed) return;
-        toast.dataset.dismissed = 'true';
-        window.clearTimeout(removeTimer);
-        toast.classList.remove('is-visible');
-        window.setTimeout(() => toast.remove(), 220);
-    };
-
-    dismiss.addEventListener('click', dismissToast);
-    toast.append(icon, text, dismiss);
-    region.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('is-visible'));
-    removeTimer = window.setTimeout(dismissToast, 4500);
+    if (message && typeof message === 'object' && message.code) {
+        window.showSnackbar(message);
+        return;
+    }
+    if (message instanceof Error) {
+        window.showSnackbar({
+            code: message.code || (type === 'error' ? 'PTSE006' : 'PTSS002'),
+            message: message.message
+        });
+        return;
+    }
+    window.showSnackbar({
+        code: type === 'error' ? 'PTSE006' : 'PTSS002',
+        message: String(message || '')
+    });
 }
 
 function validateStudentLength() {
@@ -70,20 +44,14 @@ function validateStudentLength() {
 }
 
 function getApiErrorMessage(result, fallback) {
-    if (result.errors && typeof result.errors === 'object') {
-        const fieldErrors = Object.entries(result.errors)
-            .map(([field, message]) => `${field.charAt(0).toUpperCase() + field.slice(1)}: ${message}`)
-            .join('. ');
-        if (fieldErrors) return fieldErrors;
-    }
-    return result.message || fallback;
+    return { code: result.code || 'PTSE001', message: result.message || fallback };
 }
 
 async function loadAdminDashboard() {
     try {
         const response = await fetch('/api/dashboard');
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Unable to load dashboard.');
+        if (!response.ok) throw window.createApiError(result, 'Unable to load dashboard.');
         const dashboard = result.data || result;
         if (dashboard.role !== 'ADMIN') throw new Error('Admin dashboard data is unavailable.');
         Object.entries(dashboard.stats || {}).forEach(([key, value]) => {
@@ -92,6 +60,7 @@ async function loadAdminDashboard() {
         });
     } catch (error) {
         console.error('Error loading admin dashboard:', error);
+        showToast(error, 'error');
     }
 }
 
@@ -148,7 +117,7 @@ async function loadStudents() {
 async function saveStudent() {
     const validationMessage = validateStudentLength();
     if (validationMessage) {
-        showToast(validationMessage, 'error');
+        showToast({ code: 'PTSE001', message: validationMessage }, 'error');
         return;
     }
 
@@ -176,13 +145,13 @@ async function saveStudent() {
             bootstrap.Modal.getInstance(document.getElementById('studentFormModal')).hide();
             document.getElementById('studentForm').reset();
             loadStudents();
-            showToast('Student saved successfully!');
+            showToast(result);
         } else {
             showToast(getApiErrorMessage(result, 'Failed to save student'), 'error');
         }
     } catch (err) {
         console.error('Error saving student:', err);
-        showToast('Error saving student', 'error');
+        showToast({ code: 'PTSE006', message: 'Error saving student.' }, 'error');
     }
 }
 
@@ -210,7 +179,7 @@ async function editStudent(id) {
         window.saveStudent = async function() {
             const validationMessage = validateStudentLength();
             if (validationMessage) {
-                showToast(validationMessage, 'error');
+                showToast({ code: 'PTSE001', message: validationMessage }, 'error');
                 return;
             }
 
@@ -238,7 +207,7 @@ async function editStudent(id) {
                     bootstrap.Modal.getInstance(document.getElementById('studentFormModal')).hide();
                     document.getElementById('studentForm').reset();
                     loadStudents();
-                    showToast('Student updated successfully!');
+                    showToast(result);
                     // Restore original saveStudent
                     window.saveStudent = saveStudent;
                 } else {
@@ -246,12 +215,12 @@ async function editStudent(id) {
                 }
             } catch (err) {
                 console.error('Error updating student:', err);
-                showToast('Error updating student', 'error');
+                showToast({ code: 'PTSE006', message: 'Error updating student.' }, 'error');
             }
         };
     } catch (err) {
         console.error('Error loading student:', err);
-        showToast('Error loading student', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -261,15 +230,16 @@ async function deleteStudent(id) {
     
     try {
         const r = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+        const result = await r.json();
         if (r.ok) {
             loadStudents();
-            showToast('Student deleted successfully!');
+            showToast(result);
         } else {
-            showToast('Failed to delete student', 'error');
+            showToast(result, 'error');
         }
     } catch (err) {
         console.error('Error deleting student:', err);
-        showToast('Error deleting student', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -330,13 +300,13 @@ async function saveCompany() {
             bootstrap.Modal.getInstance(document.getElementById('companyFormModal')).hide();
             document.getElementById('companyForm').reset();
             loadCompanies();
-            showToast('Company saved successfully!');
+            showToast(result);
         } else {
-            showToast(result.message || 'Failed to save company', 'error');
+            showToast(result, 'error');
         }
     } catch (err) {
         console.error('Error saving company:', err);
-        showToast('Error saving company', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -377,19 +347,19 @@ async function editCompany(id) {
                     bootstrap.Modal.getInstance(document.getElementById('companyFormModal')).hide();
                     document.getElementById('companyForm').reset();
                     loadCompanies();
-                    showToast('Company updated successfully!');
+                    showToast(result);
                     window.saveCompany = saveCompany;
                 } else {
-                    showToast(result.message || 'Failed to update company', 'error');
+                    showToast(result, 'error');
                 }
             } catch (err) {
                 console.error('Error updating company:', err);
-                showToast('Error updating company', 'error');
+                showToast(err, 'error');
             }
         };
     } catch (err) {
         console.error('Error loading company:', err);
-        showToast('Error loading company', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -399,15 +369,16 @@ async function deleteCompany(id) {
     
     try {
         const r = await fetch(`/api/companies/${id}`, { method: 'DELETE' });
+        const result = await r.json();
         if (r.ok) {
             loadCompanies();
-            showToast('Company deleted successfully!');
+            showToast(result);
         } else {
-            showToast('Failed to delete company', 'error');
+            showToast(result, 'error');
         }
     } catch (err) {
         console.error('Error deleting company:', err);
-        showToast('Error deleting company', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -474,13 +445,13 @@ async function saveTraining() {
             bootstrap.Modal.getInstance(document.getElementById('trainingFormModal')).hide();
             document.getElementById('trainingForm').reset();
             loadTrainings();
-            showToast('Training saved successfully!');
+            showToast(result);
         } else {
-            showToast(result.message || 'Failed to save training', 'error');
+            showToast(result, 'error');
         }
     } catch (err) {
         console.error('Error saving training:', err);
-        showToast('Error saving training', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -527,19 +498,19 @@ async function editTraining(id) {
                     bootstrap.Modal.getInstance(document.getElementById('trainingFormModal')).hide();
                     document.getElementById('trainingForm').reset();
                     loadTrainings();
-                    showToast('Training updated successfully!');
+                    showToast(result);
                     window.saveTraining = saveTraining;
                 } else {
-                    showToast(result.message || 'Failed to update training', 'error');
+                    showToast(result, 'error');
                 }
             } catch (err) {
                 console.error('Error updating training:', err);
-                showToast('Error updating training', 'error');
+                showToast(err, 'error');
             }
         };
     } catch (err) {
         console.error('Error loading training:', err);
-        showToast('Error loading training', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -549,15 +520,16 @@ async function deleteTraining(id) {
     
     try {
         const r = await fetch(`/api/trainings/${id}`, { method: 'DELETE' });
+        const result = await r.json();
         if (r.ok) {
             loadTrainings();
-            showToast('Training deleted successfully!');
+            showToast(result);
         } else {
-            showToast('Failed to delete training', 'error');
+            showToast(result, 'error');
         }
     } catch (err) {
         console.error('Error deleting training:', err);
-        showToast('Error deleting training', 'error');
+        showToast(err, 'error');
     }
 }
 
@@ -596,12 +568,12 @@ async function generateEligiblePlacements() {
     try {
         const response = await fetch('/api/placements/generate-eligible', { method: 'POST' });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Unable to generate placements.');
+        if (!response.ok) throw window.createApiError(result, 'Unable to generate placements.');
         const summary = result.data || result;
         await loadPlacements();
-        showToast(`Created ${summary.created} placement records; skipped ${summary.skipped} existing eligible records.`);
+        showToast({ code: result.code, message: `${result.message} Created ${summary.created} records; skipped ${summary.skipped} existing eligible records.` });
     } catch (error) {
-        showToast(error.message || 'Unable to generate placements.', 'error');
+        showToast(error, 'error');
     }
 }
 

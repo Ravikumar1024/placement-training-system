@@ -7,6 +7,7 @@ import com.placement.entity.Training;
 import com.placement.repository.UserRepository;
 import com.placement.service.AttendanceService;
 import com.placement.service.TrainingService;
+import com.placement.util.ApiMessages;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,7 @@ public class TrainingController {
 
     @GetMapping
     public ResponseEntity<Result<List<Training>>> all() {
-        return ResponseEntity.ok(Result.success("Trainings retrieved successfully", service.findAll()));
+        return ResponseEntity.ok(Result.success("api.success.read.trainings.list", service.findAll()));
     }
 
     @GetMapping("/current")
@@ -39,35 +40,35 @@ public class TrainingController {
             .filter(training -> !training.getStartDate().isAfter(today))
             .filter(training -> training.getEndDate() == null || !training.getEndDate().isBefore(today))
             .toList();
-        return ResponseEntity.ok(Result.success("Current trainings retrieved successfully", currentTrainings));
+        return ResponseEntity.ok(Result.success("api.success.read.trainings.current", currentTrainings));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Result<Training>> one(@PathVariable("id") String id) {
         Training training = service.findById(id);
-        return ResponseEntity.ok(Result.success("Training retrieved successfully", training));
+        return ResponseEntity.ok(Result.success("api.success.read.trainings.one", training));
     }
 
     @PostMapping("/{id}/video-completion")
     public ResponseEntity<Result<Attendance>> videoCompleted(@PathVariable("id") String id, Authentication authentication) {
         var user = userRepository.findByUsername(authentication.getName())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ApiMessages.get("api.error.authentication.userNotFound")));
         if (user.getRole() != com.placement.entity.User.Role.STUDENT || user.getStudent() == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A linked student account is required to record video attendance.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ApiMessages.get("api.error.authentication.videoAttendanceStudentRequired"));
         }
         Training training = service.findById(id);
         if (training.getVideoUrl() == null || training.getVideoUrl().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This training does not have an assigned video.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ApiMessages.get("api.error.video.notAssigned"));
         }
         Attendance attendance = attendanceService.recordVideoCompletion(user.getStudent().getId(), id, LocalDate.now(clock));
-        return ResponseEntity.ok(Result.success("Video completion recorded as present for today", attendance));
+        return ResponseEntity.ok(Result.success("api.success.write.training.videoCompletion", attendance));
     }
 
     @PostMapping
     public ResponseEntity<Result<Training>> create(@Valid @RequestBody TrainingRequest request) {
         Training value = toEntity(request);
         Training saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Training created successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.training.created", saved));
     }
 
     @PutMapping("/{id}")
@@ -75,13 +76,13 @@ public class TrainingController {
         Training value = toEntity(request);
         value.setId(id);
         Training saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Training updated successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.training.updated", saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<Void>> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return ResponseEntity.ok(Result.success("Training deleted successfully",null));
+        return ResponseEntity.ok(Result.success("api.success.write.training.deleted", null));
     }
 
     private Training toEntity(TrainingRequest request) {

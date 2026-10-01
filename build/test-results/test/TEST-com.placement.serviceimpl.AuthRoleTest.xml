@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.placement.serviceimpl.AuthRoleTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-01T06:04:48.127Z" hostname="LAP156" time="0.124">
+  <properties/>
+  <testcase name="failedRoleCheckClearsExistingSessionAndDoesNotSaveSecurityContext()" classname="com.placement.serviceimpl.AuthRoleTest" time="0.12"/>
+  <testcase name="rejectsStudentCredentialsWhenAdminRoleIsExpected()" classname="com.placement.serviceimpl.AuthRoleTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

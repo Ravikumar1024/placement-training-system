@@ -3,6 +3,7 @@ package com.placement.controller;
 import com.placement.dto.DashboardResponse;
 import com.placement.dto.EligibilityResponse;
 import com.placement.dto.Result;
+import com.placement.util.ApiMessages;
 import com.placement.entity.Attendance;
 import com.placement.entity.User;
 import com.placement.repository.AptitudeScoreRepository;
@@ -42,15 +43,15 @@ public class DashboardController {
     @GetMapping
     public ResponseEntity<Result<DashboardResponse>> dashboard(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Login is required to load the dashboard.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ApiMessages.get("api.error.authentication.dashboardLoginRequired"));
         }
         User user = userRepository.findByUsername(authentication.getName())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ApiMessages.get("api.error.authentication.userNotFound")));
 
         DashboardResponse response = user.getRole() == User.Role.ADMIN
             ? adminDashboard()
             : studentDashboard(user);
-        return ResponseEntity.ok(Result.success("Dashboard data retrieved successfully", response));
+        return ResponseEntity.ok(Result.success("api.success.read.dashboard", response));
     }
 
     private DashboardResponse adminDashboard() {
@@ -68,10 +69,10 @@ public class DashboardController {
 
     private DashboardResponse studentDashboard(User user) {
         if (user.getStudent() == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A linked student account is required.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ApiMessages.get("api.error.authentication.studentAccountRequired"));
         }
         var student = studentRepository.findById(user.getStudent().getId())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Student profile not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, ApiMessages.get("api.error.student.profileNotFound")));
         String studentId = student.getId();
         double aptitude = aptitudeScoreRepository.findAll().stream()
             .filter(score -> score.getStudent().getId().equals(studentId))

@@ -18,42 +18,42 @@ public class PlacementController {
 
     @GetMapping
     public ResponseEntity<Result<List<Placement>>> all() {
-        return ResponseEntity.ok(Result.success("Placements retrieved successfully", service.findAll()));
+        return ResponseEntity.ok(Result.success("api.success.read.placements.list", service.findAll()));
     }
 
     @PostMapping("/generate-eligible")
     public ResponseEntity<Result<PlacementGenerationResult>> generateEligible() {
         PlacementGenerationResult result = service.generateEligiblePlacements();
-        return ResponseEntity.ok(Result.success("Eligible placement records generated", result));
+        return ResponseEntity.ok(Result.success("api.success.write.placements.generated", result));
     }
 
     @GetMapping("/student/{studentId}")
     public ResponseEntity<Result<List<PlacementStatusResponse>>> byStudent(@PathVariable("studentId") String studentId) {
         List<PlacementStatusResponse> placements = service.findByStudentId(studentId);
-        return ResponseEntity.ok(Result.success("Placement status retrieved successfully", placements));
+        return ResponseEntity.ok(Result.success("api.success.read.placements.student", placements));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Result<Placement>> one(@PathVariable("id") String id) {
         Placement placement = service.findById(id);
-        return ResponseEntity.ok(Result.success("Placement retrieved successfully", placement));
+        return ResponseEntity.ok(Result.success("api.success.read.placements.one", placement));
     }
 
     @PostMapping
     public ResponseEntity<Result<Placement>> create(@Valid @RequestBody PlacementRequest request) {
         Placement saved = service.save(request);
-        return ResponseEntity.ok(Result.success("Placement created successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.placement.created", saved));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Result<Placement>> update(@PathVariable("id") String id, @Valid @RequestBody PlacementRequest request) {
         Placement saved = service.update(id, request);
-        return ResponseEntity.ok(Result.success("Placement updated successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.placement.updated", saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<Void>> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return ResponseEntity.ok(Result.success("Placement deleted successfully",null));
+        return ResponseEntity.ok(Result.success("api.success.write.placement.deleted", null));
     }
 }

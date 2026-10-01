@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.placement.dto.ResultTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-01T06:04:45.874Z" hostname="LAP156" time="0.573">
+  <properties/>
+  <testcase name="mapsCommonClientErrorsToStableApplicationCodes()" classname="com.placement.dto.ResultTest" time="0.029"/>
+  <testcase name="resolvesLengthValidationMessagesFromApplicationBundle()" classname="com.placement.dto.ResultTest" time="0.478"/>
+  <testcase name="classifiesMutationsAndAuthenticationWithSuccessCodes()" classname="com.placement.dto.ResultTest" time="0.001"/>
+  <testcase name="serializesOnlyCodeMessageAndDataForSuccess()" classname="com.placement.dto.ResultTest" time="0.058"/>
+  <testcase name="serializesOnlyCodeMessageAndDataForErrors()" classname="com.placement.dto.ResultTest" time="0.003"/>
+  <system-out><![CDATA[11:34:46.126 [Test worker] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 8.0.3.Final
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface AttendanceRepository extends JpaRepository<Attendance, String> {
 	Optional<Attendance> findFirstByStudent_IdAndTraining_IdAndDate(String studentId, String trainingId, LocalDate date);
+	long countByStudent_Id(String studentId);
+	long countByTraining_Id(String trainingId);
 }

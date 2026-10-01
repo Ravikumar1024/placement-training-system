@@ -19,10 +19,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.username())
-            .orElseThrow(() -> new UnauthorizedException("Invalid username or password"));
+            .orElseThrow(() -> new UnauthorizedException("api.error.authentication.invalidCredentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new UnauthorizedException("Invalid username or password");
+            throw new UnauthorizedException("api.error.authentication.invalidCredentials");
+        }
+        if (request.expectedRole() != null && !request.expectedRole().equals(user.getRole().name())) {
+            String roleMessageKey = "ADMIN".equals(request.expectedRole())
+                ? "api.error.authentication.adminOnly"
+                : "api.error.authentication.studentOnly";
+            throw new UnauthorizedException(roleMessageKey);
         }
 
         String studentId = user.getStudent() == null ? null : user.getStudent().getId();

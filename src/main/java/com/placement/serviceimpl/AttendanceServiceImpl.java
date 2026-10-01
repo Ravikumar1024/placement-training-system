@@ -6,6 +6,7 @@ import com.placement.repository.TrainingRepository;
 import com.placement.repository.AttendanceRepository;
 import com.placement.service.AttendanceService;
 import com.placement.exception.ResourceNotFoundException;
+import com.placement.util.ApiMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,20 +27,20 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional(readOnly = true)
     public Attendance findById(String id) {
         return repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Attendance not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.attendance.notFound", id));
     }
 
     @Transactional
     public Attendance save(Attendance entity) {
         // Validate that student and training exist and are valid
         if (entity.getStudent() == null || entity.getStudent().getId() == null) {
-            throw new IllegalArgumentException("Student is required");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.attendance.studentRequired"));
         }
         if (entity.getTraining() == null || entity.getTraining().getId() == null) {
-            throw new IllegalArgumentException("Training is required");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.attendance.trainingRequired"));
         }
         if (entity.getDate() == null) {
-            throw new IllegalArgumentException("Attendance date is required");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.attendance.dateRequired"));
         }
         return repository.save(entity);
     }
@@ -48,13 +49,13 @@ public class AttendanceServiceImpl implements AttendanceService {
     public List<Attendance> saveForTrainingDate(String trainingId, LocalDate date, List<com.placement.dto.BulkAttendanceRequest.Entry> entries) {
         Set<String> studentIds = new HashSet<>();
         if (entries.stream().anyMatch(entry -> !studentIds.add(entry.studentId()))) {
-            throw new IllegalArgumentException("A student can only appear once in a session attendance request");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.attendance.duplicateStudent"));
         }
         var training = trainingRepository.findById(trainingId)
-            .orElseThrow(() -> new ResourceNotFoundException("Training not found: " + trainingId));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.training.notFound", trainingId));
         List<Attendance> records = entries.stream().map(entry -> {
             var student = studentRepository.findById(entry.studentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + entry.studentId()));
+                .orElseThrow(() -> new ResourceNotFoundException("api.error.student.notFound", entry.studentId()));
             Attendance attendance = repository.findFirstByStudent_IdAndTraining_IdAndDate(student.getId(), trainingId, date)
                 .orElseGet(Attendance::new);
             attendance.setStudent(student);
@@ -69,15 +70,15 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional
     public Attendance recordVideoCompletion(String studentId, String trainingId, LocalDate date) {
         var training = trainingRepository.findById(trainingId)
-            .orElseThrow(() -> new ResourceNotFoundException("Training not found: " + trainingId));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.training.notFound", trainingId));
         if (training.getVideoUrl() == null || training.getVideoUrl().isBlank()) {
-            throw new IllegalArgumentException("This training does not have an assigned video");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.attendance.videoNotAssigned"));
         }
         if (date.isBefore(training.getStartDate()) || (training.getEndDate() != null && date.isAfter(training.getEndDate()))) {
-            throw new IllegalArgumentException("Attendance can only be recorded during the training dates");
+            throw new IllegalArgumentException(ApiMessages.get("api.error.attendance.outsideTrainingDates"));
         }
         var student = studentRepository.findById(studentId)
-            .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentId));
+            .orElseThrow(() -> new ResourceNotFoundException("api.error.student.notFound", studentId));
         Attendance attendance = repository.findFirstByStudent_IdAndTraining_IdAndDate(studentId, trainingId, date)
             .orElseGet(Attendance::new);
         attendance.setStudent(student);
@@ -90,7 +91,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional
     public void delete(String id) {
         if (!repository.existsById(id)) 
-            throw new ResourceNotFoundException("Attendance not found: " + id);
+            throw new ResourceNotFoundException("api.error.attendance.notFound", id);
         repository.deleteById(id);
     }
 }

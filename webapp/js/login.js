@@ -1,12 +1,10 @@
 // Login form handler
 document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const msg = document.getElementById('msg');
     const submitButton = document.getElementById('loginSubmit');
+    const submitLabel = submitButton.innerHTML;
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
-    msg.textContent = '';
-    msg.classList.add('d-none');
     submitButton.disabled = true;
     submitButton.textContent = 'Signing in...';
 
@@ -16,28 +14,33 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: usernameInput.value,
-                password: passwordInput.value
+                password: passwordInput.value,
+                expectedRole: document.body.dataset.loginRole || null
             })
         });
 
         const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-            const message = response.status === 400 || response.status === 401
-                ? 'Invalid username or password. Please try again.'
-                : result.message || 'Unable to sign in right now. Please try again.';
-            throw new Error(message);
+            throw window.createApiError(result, 'Unable to sign in right now. Please try again.');
         }
 
         const user = result.data || result;
         if (!user.userId || !user.role) {
-            throw new Error('The sign-in response was incomplete. Please try again.');
+            throw window.createApiError(result, 'The sign-in response was incomplete. Please try again.');
+        }
+        const expectedRole = document.body.dataset.loginRole;
+        if (expectedRole && user.role !== expectedRole) {
+            const roleMessage = expectedRole === 'ADMIN'
+                ? 'This page is for admin accounts. Use the student sign-in for student accounts.'
+                : 'This page is for student accounts. Use the admin sign-in for admin accounts.';
+            throw window.createApiError({ code: 'PTSE002', message: roleMessage });
         }
 
         const dashboardResponse = await fetch('/api/dashboard');
         const dashboardResult = await dashboardResponse.json().catch(() => ({}));
         if (!dashboardResponse.ok) {
-            throw new Error(dashboardResult.message || 'Signed in, but unable to load your dashboard. Please try again.');
+            throw window.createApiError(dashboardResult, 'Signed in, but unable to load your dashboard. Please try again.');
         }
 
         localStorage.setItem('user', JSON.stringify(user));
@@ -52,12 +55,13 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
         }
 
     } catch (err) {
-        msg.textContent = err instanceof TypeError
-            ? 'Unable to connect. Check your connection and try again.'
-            : err.message || 'Unable to sign in right now. Please try again.';
-        msg.classList.remove('d-none');
+        if (err instanceof TypeError) {
+            err.code = 'PTSE006';
+            err.message = 'Unable to connect. Check your connection and try again.';
+        }
+        window.showSnackbar(err, 'Unable to sign in right now. Please try again.');
     } finally {
         submitButton.disabled = false;
-        submitButton.textContent = 'Login';
+        submitButton.innerHTML = submitLabel;
     }
 });

@@ -5,7 +5,8 @@ const numericFields = new Set(['cgpa', 'backlogs', 'packageLpa', 'minCgpa', 'max
 async function apiRequest(url, options = {}) {
     const response = await fetch(url, options);
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'The request could not be completed.');
+    if (!response.ok) throw window.createApiError(result, 'The request could not be completed.');
+    if ((options.method || 'GET').toUpperCase() !== 'GET') window.showSnackbar(result);
     return result.data ?? result;
 }
 
@@ -61,6 +62,7 @@ async function load() {
         cell.textContent = error.message;
         row.appendChild(cell);
         crudRows.replaceChildren(row);
+        window.showSnackbar(error);
     }
 }
 
@@ -73,7 +75,7 @@ async function edit(id) {
         });
         crudForm.dataset.id = id;
         crudForm.querySelector('button[type="submit"], button:not([type])').textContent = 'Update';
-    } catch (error) { alert(error.message); }
+    } catch (error) { window.showSnackbar(error); }
 }
 
 crudForm.addEventListener('submit', async event => {
@@ -97,7 +99,7 @@ crudForm.addEventListener('submit', async event => {
         delete crudForm.dataset.id;
         crudForm.querySelector('button[type="submit"], button:not([type])').textContent = 'Add';
         await load();
-    } catch (error) { alert(error.message); }
+    } catch (error) { window.showSnackbar(error); }
 });
 
 async function del(id) {
@@ -105,7 +107,7 @@ async function del(id) {
     try {
         await apiRequest(`${window.API}/${encodeURIComponent(id)}`, { method: 'DELETE' });
         await load();
-    } catch (error) { alert(error.message); }
+    } catch (error) { window.showSnackbar(error); }
 }
 
 load();

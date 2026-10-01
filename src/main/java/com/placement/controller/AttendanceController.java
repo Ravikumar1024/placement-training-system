@@ -8,6 +8,7 @@ import com.placement.entity.Student;
 import com.placement.entity.Training;
 import com.placement.repository.UserRepository;
 import com.placement.service.AttendanceService;
+import com.placement.util.ApiMessages;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,39 +27,39 @@ public class AttendanceController {
 
     @GetMapping
     public ResponseEntity<Result<List<Attendance>>> all() {
-        return ResponseEntity.ok(Result.success("Attendance records retrieved successfully", service.findAll()));
+        return ResponseEntity.ok(Result.success("api.success.read.attendance.list", service.findAll()));
     }
 
     @GetMapping("/student/{studentId}")
     public ResponseEntity<Result<List<Attendance>>> byStudent(@PathVariable("studentId") String studentId, Authentication authentication) {
         var user = userRepository.findByUsername(authentication.getName())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found."));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, ApiMessages.get("api.error.authentication.userNotFound")));
         if (user.getRole() != com.placement.entity.User.Role.STUDENT || user.getStudent() == null || !user.getStudent().getId().equals(studentId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Students may only view their own attendance.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ApiMessages.get("api.error.authentication.studentAttendanceForbidden"));
         }
         List<Attendance> records = service.findAll().stream()
             .filter(attendance -> attendance.getStudent().getId().equals(studentId))
             .toList();
-        return ResponseEntity.ok(Result.success("Student attendance retrieved successfully", records));
+        return ResponseEntity.ok(Result.success("api.success.read.attendance.student", records));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Result<Attendance>> one(@PathVariable("id") String id) {
         Attendance attendance = service.findById(id);
-        return ResponseEntity.ok(Result.success("Attendance record retrieved successfully", attendance));
+        return ResponseEntity.ok(Result.success("api.success.read.attendance.one", attendance));
     }
 
     @PostMapping
     public ResponseEntity<Result<Attendance>> create(@Valid @RequestBody AttendanceRequest request) {
         Attendance value = toEntity(request);
         Attendance saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Attendance record created successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.attendance.created", saved));
     }
 
     @PostMapping("/bulk")
     public ResponseEntity<Result<List<Attendance>>> bulk(@Valid @RequestBody BulkAttendanceRequest request) {
         List<Attendance> saved = service.saveForTrainingDate(request.trainingId(), request.date(), request.entries());
-        return ResponseEntity.ok(Result.success("Attendance saved successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.attendance.saved", saved));
     }
 
     @PutMapping("/{id}")
@@ -66,13 +67,13 @@ public class AttendanceController {
         Attendance value = toEntity(request);
         value.setId(id);
         Attendance saved = service.save(value);
-        return ResponseEntity.ok(Result.success("Attendance record updated successfully", saved));
+        return ResponseEntity.ok(Result.success("api.success.write.attendance.updated", saved));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<Void>> delete(@PathVariable("id") String id) {
         service.delete(id);
-        return ResponseEntity.ok(Result.success("Attendance record deleted successfully",null));
+        return ResponseEntity.ok(Result.success("api.success.write.attendance.deleted", null));
     }
 
     private Attendance toEntity(AttendanceRequest request) {

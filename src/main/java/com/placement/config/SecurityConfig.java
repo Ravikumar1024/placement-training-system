@@ -2,6 +2,7 @@ package com.placement.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.placement.dto.Result;
+import com.placement.util.ApiMessages;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -98,13 +99,13 @@ public class SecurityConfig {
                 .anyRequest().permitAll())
             .exceptionHandling(handling -> handling
                 .authenticationEntryPoint((request, response, authException) -> {
-                    Result<String> error = Result.error(401, "Unauthorized: " + authException.getMessage());
+                    Result<String> error = Result.error(401, ApiMessages.get("api.error.authenticationRequired"));
                     response.setStatus(401);
                     response.setContentType("application/json");
                     response.getWriter().write(objectMapper.writeValueAsString(error));
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    Result<String> error = Result.error(403, "Access Denied: " + accessDeniedException.getMessage());
+                    Result<String> error = Result.error(403, ApiMessages.get("api.error.PTSE003.message"));
                     response.setStatus(403);
                     response.setContentType("application/json");
                     response.getWriter().write(objectMapper.writeValueAsString(error));
